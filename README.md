@@ -10,3 +10,12 @@ Apps are frequently removed from the appstore. Hence my thinking was, if I can p
 
 ## Usage
 
+Plase a file named "bundleIds.txt" in the same file as the script.
+* It should be formatted the same as the following, one Bundle ID per line.
+```
+com.naturalmotion.clumsyninja
+com.mediocre.smashhit
+com.klgamesllc.escapechallenge
+```
+
+## Obtaining Bundle ID's
