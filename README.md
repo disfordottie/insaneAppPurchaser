@@ -19,3 +19,6 @@ com.klgamesllc.escapechallenge
 ```
 
 ## Obtaining Bundle ID's
+
+## Credits
+**majd** for making [ipatool](https://github.com/majd/ipatool) which is what makes this script possible.
