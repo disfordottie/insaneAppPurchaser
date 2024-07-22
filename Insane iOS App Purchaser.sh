@@ -231,7 +231,7 @@ pruchase() {
         echo "$last_line"
 
         # Check the last line for the specific phrases and tally their occurrences
-        if [[ "$last_line" =~ "success=true" ]]; then
+        if [[ "$last_line" =~ "success" ]] && [[ "$last_line" =~ "true" ]] && [[ "$last_line" =~ "INF" ]]; then
             ((success_count++))
         elif [[ "$last_line" =~ "license already exists" ]]; then
             ((license_exists_count++))
@@ -270,7 +270,7 @@ EOF
     elif [ "$success_count" -gt 1 ]; then
         status_message=$(cat <<EOF
 $status_message
-$success_count apps were purchased successfully.
+${lightgreen}$success_count apps were purchased successfully.${none}
 EOF
 )
     fi
