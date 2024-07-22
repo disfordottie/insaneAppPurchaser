@@ -19,6 +19,10 @@ com.klgamesllc.escapechallenge
 ```
 
 ## Obtaining Bundle ID's
+**As of 1.1 you can now use the built in lists!** Some Examples include:
+- Every iOS 3 - iOS 6 app
+- Internal Apple Apps (Soon)
+
 Another script I've made hase multiple ways to get Bundle ID's: [Insane App Converter](https://github.com/disfordottie/insaneAppConverter)
 
 * **I had a list of 60 thousand+ Bundle ID's which was meant to be for this script, Read below.**
