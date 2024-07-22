@@ -186,6 +186,7 @@ ${lightred}${bold}Choose a number from 1 to $file_count${none}" '#' '#' "List to
     curl -o "$SCRIPT_DIR/existingList.txt" "$url"
 
     file_name=$(echo "$file_name" | sed 's/%20/ /g')
+    file_name=$(echo "$file_name" | sed 's/%26/\&/g')
     echo "File downloaded as 'existingList.txt'. (Original: $file_name)"
     
     local line_count=$(awk 'END {print NR}' "$SCRIPT_DIR/existingList.txt")
