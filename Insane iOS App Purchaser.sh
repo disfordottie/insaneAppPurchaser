@@ -334,13 +334,13 @@ EOF
     if [ "$app_not_found_count" -eq 1 ]; then
         status_message=$(cat <<EOF
 $status_message
-${red}${bold}1 app couldnt be found.${none}
+${red}${bold}1 app couldnt be found in your country / region.${none}
 EOF
 )
     elif [ "$app_not_found_count" -gt 1 ]; then
         status_message=$(cat <<EOF
 $status_message
-${red}${bold}$app_not_found_count apps couldnt be found.${none}
+${red}${bold}$app_not_found_count apps couldnt be found in your country / region.${none}
 EOF
 )
     fi
