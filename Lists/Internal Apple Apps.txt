@@ -1,0 +1,16 @@
+com.apple.AccessoryDevelopAsst
+com.apple.fmca
+com.apple.measurefitapp
+com.apple.mscertificationassistant
+com.apple.healthstudies
+com.apple.seed
+com.apple.CarKeysTests
+com.apple.gca
+com.apple.carplaytests
+com.apple.platoon
+com.apple.siri-voice-study
+com.bydeluxe.com.appleplus.fyc
+com.filemaker.go.v21
+com.apple.ConnectSSO
+com.apple.hfrecorder
+com.apple.mipactuserstudy
