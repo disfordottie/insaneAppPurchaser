@@ -1,18 +1,23 @@
 #!/bin/bash
 
-version="1.1"
+version="1.2"
 
 red=`tput setaf 1`
+red_background='\033[7;91m'
 green=`tput setaf 2`
+green_background='\033[7;92m'
 lightgreen='\033[1;32m'
 cyan=`tput setaf 6`
 none=`tput sgr0`
 yellow='\033[1;33m'
+yellow_background='\033[7;93m'
 purple='\033[1;35m'
 lightred='\033[1;31m'
+lightred_background='\033[7;31m'
 bold=$(tput bold)
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_NAME=$(basename "$0")
 
 center_message_input() {
     local message="$1"
@@ -70,28 +75,55 @@ center_message_input() {
 
 
 main_menu() {
-    center_message_input "${bold}Insane iOS App Purchaser, $version by ${cyan}@disfordottie${none}
+
+    local choices='[[ "$choice" != "1" && "$choice" != "2" ]]'
+
+    local message="${bold}Insane iOS App Purchaser, $version by ${cyan}@disfordottie${none}
 
 
 This script purchases apps in bulk using a list of Bundle ID's.
 
 1. Use my own list
 
-2. Browse existing lists" '#' '#' "Choice: " " Main Menu "
+2. Browse existing lists"
 
-    while [[ "$choice" != "1" && "$choice" != "2" ]]; do
-        center_message_input "${bold}Insane iOS App Purchaser, $version by ${cyan}@disfordottie${none}
+    # Define the path to the file
+    local WORKING_LIST="${SCRIPT_DIR}/workingList.txt"
 
+    # Check if the file exists
+    if [[ -f "$WORKING_LIST" ]]; then
+        #exists
+        message=$(cat <<EOF
+$message
+   
+${yellow_background}                                                  ${yellow_background}
+${yellow_background}${bold}   Warning!                                       ${yellow_background}
+   Last time you ran this script it didnt         ${yellow_background}
+   finish purchasing all the apps on the list.    ${yellow_background}
+                                                  ${yellow_background}
+   To pick up from where you left off, press R.   ${yellow_background}
+                                                  ${none}
+EOF
+)
+    
+        choices='[[ "$choice" != "1" && "$choice" != "2" && "$choice" != "R" && "$choice" != "r" ]]'
+    
+    fi
+    
+    center_message_input "$message" '#' '#' "Choice: " " Main Menu "
 
-This script purchases apps in bulk using a list of Bundle ID's.
-
-1. Use my own list
-
-2. Browse existing lists
+    while eval "$choices"; do
+        center_message_input "$message
 
 ${lightred}${bold}\"$choice\" is not a valid option${none}" '#' '#' "Choice: " " Main Menu "
     done
+    
     local list_option=$choice
+    
+    if [ "$list_option" = "r" ] || [ "$list_option" = "R" ]; then
+        pruchase "workingList"
+        return
+    fi
 
     center_message_input "${yellow}${bold}Make sure you have ipatool installed (https://github.com/majd/ipatool)${none}
 
@@ -153,7 +185,7 @@ $files_list
 ${bold}$index.${none} ${purple}${file}${none}
 EOF
 )
-
+        
         ((index++))
         ((file_count++))
     done < <(echo "$response" | jq -r '.[] | select(.type == "file") | .name' | sed 's/\.[^.]*$//')
@@ -176,9 +208,12 @@ Check your internet connection and try again." '#' '#' "Press Any Key To Return 
 ${lightred}${bold}Choose a number from 1 to $file_count${none}" '#' '#' "List to use: " " Existing List "
         done
     fi
-
+    
+    
     # Get the download URL of the selected file
     local url=$(echo "$response" | jq -r ".[$((choice-1))] | select(.type == \"file\") | .download_url")
+    local url=$(echo "$url" | sed 's/ /%20/g; s/&/%26/g; s/+/%2B/g')
+    echo "$url"
     
     local file_name=$(basename "$url" | sed 's/\.[^.]*$//')
 
@@ -187,6 +222,7 @@ ${lightred}${bold}Choose a number from 1 to $file_count${none}" '#' '#' "List to
 
     file_name=$(echo "$file_name" | sed 's/%20/ /g')
     file_name=$(echo "$file_name" | sed 's/%26/\&/g')
+    file_name=$(echo "$file_name" | sed 's/%2B/+/g')
     echo "File downloaded as 'existingList.txt'. (Original: $file_name)"
     
     local line_count=$(awk 'END {print NR}' "$SCRIPT_DIR/existingList.txt")
@@ -207,10 +243,16 @@ pruchase() {
     local other_error_count=0
     
     local file_name="$1"
+    
     # Define the input file
     local INFILE=${SCRIPT_DIR}/$file_name.txt
     
     echo "$INFILE"
+    
+    if [ "$file_name" != "workingList" ]; then
+        cp "$INFILE" "${SCRIPT_DIR}/workingList.txt"
+        INFILE="${SCRIPT_DIR}/workingList.txt"
+    fi
 
     local line_number=1
 
@@ -223,8 +265,11 @@ pruchase() {
     local IFS=$'\n' # set the Internal Field Separator to newline
     for LINE in $(cat "$INFILE")
     do
-        echo "Processing line number: $line_number"
-        echo "$LINE"
+        echo "### Processing line number: $line_number"
+        echo "### $LINE"
+        
+        local TEMPFILE=$(mktemp)
+        #echo "$TEMPFILE"
         
         #ipatool purchase -b "$LINE"
         local last_line=$(ipatool purchase -b "$LINE" 2>&1 | tail -n 1)
@@ -245,8 +290,16 @@ pruchase() {
             ((other_error_count++))
         fi
         
+        # Remove Line
+        grep -vxF "$LINE" "$INFILE" > "$TEMPFILE"
+
+        # Move the temporary file to replace the original file
+        mv "$TEMPFILE" "$INFILE"
+        
         ((line_number++))
     done
+    
+    rm "$INFILE"
     
     ((line_number--))
     
@@ -380,4 +433,164 @@ EOF
     
 }
 
+
+check_for_updates() {
+
+    # Define variables
+    local REPO_OWNER="disfordottie"
+    local REPO_NAME="insaneAppPurchaser"
+    local SCRIPT_FILE_NAME="Insane.iOS.App.Purchaser.sh"
+    local LATEST_VERSION_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"  # GitHub API URL
+
+    # Get current version
+    local CURRENT_VERSION=$version
+
+    # Fetch latest release info from GitHub
+    local LATEST_RELEASE_INFO=$(curl -s "$LATEST_VERSION_URL")
+    local LATEST_VERSION=$(echo "$LATEST_RELEASE_INFO" | jq -r '.tag_name')  # Assuming tag_name represents the version
+
+    # Compare versions
+    if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+    
+        local padded_message="Your version: ${version}, New version: ${LATEST_VERSION}"
+
+        while [ ${#padded_message} -lt 49 ]; do
+            padded_message=" ${padded_message} "
+        done
+    
+        while [ ${#padded_message} -lt 50 ]; do
+            padded_message="${padded_message} "
+        done
+    
+        local message=""
+        
+        local lines=(
+            "${green_background}${bold}                                                  ${green_background}${none}"
+            "${green_background}${bold}             An Update Is Available!              ${green_background}${none}"
+            "${green_background}${bold}                                                  ${green_background}${none}"
+            "${green_background}${bold}${padded_message}${green_background}${none}"
+            "${green_background}${bold}                                                  ${green_background}${none}"
+            "${green_background}${bold}        Would you like to install it now?         ${green_background}${none}"
+            "${green_background}${bold}                                                  ${green_background}${none}"
+        )
+    
+        local cols=$(tput cols)
+    
+        # Loop through each line and process it
+        for line in "${lines[@]}"; do
+    
+            local title_length=50
+            local left_padding=$(( (cols - title_length) / 2 ))
+
+            local padding=$(printf "%*s" "$left_padding" | tr ' ' " ")
+        
+            local padded_line="${padding}${line}"
+        
+            message=$(cat <<EOF
+$message
+${padded_line}
+EOF
+)
+        done
+    
+        center_message_input "$message" '#' '#' "Update? [y/n]: " " Update Available "
+        
+        local fill_space=""
+        
+        while [[ "$choice" != "y" && "$choice" != "n" && "$choice" != "Y" && "$choice" != "N" ]]; do
+            
+            
+            if [ "${#choice}" -eq 0 ]; then
+                fill_space=" "
+            else
+                fill_space=""
+            fi
+            center_message_input "$message
+
+${padding}${lightred_background}${bold}                                                  ${lightred_background}${none}
+${padding}${lightred_background}${bold}            \"${choice}${fill_space}\" is not a valid option             ${none}
+${padding}${lightred_background}${bold}                                                  ${lightred_background}${none}" '#' '#' "Update? [y/n]: " " Update Available "
+        done
+        
+        if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
+            # Get the download URL for the latest release asset
+            DOWNLOAD_URL=$(echo "$LATEST_RELEASE_INFO" | jq -r ".assets[] | select(.name == \"$SCRIPT_FILE_NAME\") | .browser_download_url")
+
+            # Download the latest version
+            curl -L -o "${SCRIPT_DIR}/Insane-iOS-App-Purchaser-Update.sh" "$DOWNLOAD_URL"
+    
+            local OLD_SCRIPT="${SCRIPT_DIR}/${SCRIPT_NAME}"
+            local NEW_SCRIPT="$SCRIPT_DIR/Insane-iOS-App-Purchaser-Update.sh"
+
+            # Replace the contents of the old script with the new one
+            cat "$NEW_SCRIPT" > "$OLD_SCRIPT"
+    
+            # Replace the current script with the new version
+            #mv "${SCRIPT_DIR}/Insane-iOS-App-Purchaser-Update.sh" "$SCRIPT_DIR/$SCRIPT_NAME"
+    
+            ${SCRIPT_DIR}/${SCRIPT_NAME} "updated"
+        else
+            return
+        fi
+    fi
+    
+}
+
+updated() {
+    rm "$SCRIPT_DIR/Insane-iOS-App-Purchaser-Update.sh"
+
+    local padded_message="Successfully updated to version ${version}"
+
+    while [ ${#padded_message} -lt 49 ]; do
+        # Append a character to the string (for demonstration)
+        padded_message=" ${padded_message} "
+    done
+    
+    while [ ${#padded_message} -lt 50 ]; do
+        # Append a character to the string (for demonstration)
+        padded_message="${padded_message} "
+    done
+    
+    local message=""
+        
+    local lines=(
+        "${green_background}${bold}                                                  ${green_background}${none}"
+        "${green_background}${bold}                 Update Complete.                 ${green_background}${none}"
+        "${green_background}${bold}                                                  ${green_background}${none}"
+        "${green_background}${bold}${padded_message}${green_background}${none}"
+        "${green_background}${bold}                                                  ${green_background}${none}"
+    )
+    
+    local cols=$(tput cols)
+    
+    # Loop through each line and process it
+    for line in "${lines[@]}"; do
+    
+        local title_length=50
+        local left_padding=$(( (cols - title_length) / 2 ))
+
+        local padding=$(printf "%*s" "$left_padding" | tr ' ' " ")
+        
+        local padded_line="${padding}${line}"
+        
+        message=$(cat <<EOF
+$message
+${padded_line}
+EOF
+)
+    done
+    
+    center_message_input "$message" '#' '#' "Press Any Key To Continue: " " Update Complete "
+    
+}
+
+
+
+
+# Check if this is first launch
+if [ "$1" == "updated" ]; then
+    updated
+fi
+
+check_for_updates
 main_menu
