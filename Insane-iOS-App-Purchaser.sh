@@ -439,7 +439,7 @@ check_for_updates() {
     # Define variables
     local REPO_OWNER="disfordottie"
     local REPO_NAME="insaneAppPurchaser"
-    local SCRIPT_FILE_NAME="Insane.iOS.App.Purchaser.sh"
+    local SCRIPT_FILE_NAME="Insane-iOS-App-Purchaser.sh"
     local LATEST_VERSION_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"  # GitHub API URL
 
     # Get current version
