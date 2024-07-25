@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="1.2"
+version="1.2.1"
 
 red=`tput setaf 1`
 red_background='\033[7;91m'
@@ -188,12 +188,14 @@ EOF
         
         ((index++))
         ((file_count++))
-    done < <(echo "$response" | jq -r '.[] | select(.type == "file") | .name' | sed 's/\.[^.]*$//')
+    done < <(echo "$response" | jq -r '.[] | select(.type == "file") | .name' | sed 's/\.txt$//')
     
     choice=-1
     if [ "$file_count" -eq 0 ]; then
         #no lists
         center_message_input "${lightred}${bold}No lists where found on the server.${none}
+
+Github couldnt be reached.
 
 Check your internet connection and try again." '#' '#' "Press Any Key To Return To Main Menu: " " Existing List "
         main_menu
@@ -247,11 +249,26 @@ pruchase() {
     # Define the input file
     local INFILE=${SCRIPT_DIR}/$file_name.txt
     
-    echo "$INFILE"
+    #echo "$INFILE"
     
     if [ "$file_name" != "workingList" ]; then
         cp "$INFILE" "${SCRIPT_DIR}/workingList.txt"
         INFILE="${SCRIPT_DIR}/workingList.txt"
+        
+    else
+        
+        # Count the number of lines in the file
+        local line_count=$(wc -l < "$INFILE" | tr -d ' ')
+
+        # Check if the last character of the file is a newline
+        local last_char=$(tail -c 1 "$WORKING_LIST")
+
+        # If the last character is not a newline, increment the line count
+        if [ "$last_char" != "" ]; then
+            ((line_count++))
+        fi
+        
+        center_message_input "${purple}There are ${line_count} apps left to proccess.${none}" '#' '#' "Press Any Key To Start: " " Resume "
     fi
 
     local line_number=1
@@ -267,9 +284,6 @@ pruchase() {
     do
         echo "### Processing line number: $line_number"
         echo "### $LINE"
-        
-        local TEMPFILE=$(mktemp)
-        #echo "$TEMPFILE"
         
         #ipatool purchase -b "$LINE"
         local last_line=$(ipatool purchase -b "$LINE" 2>&1 | tail -n 1)
@@ -290,11 +304,15 @@ pruchase() {
             ((other_error_count++))
         fi
         
-        # Remove Line
-        grep -vxF "$LINE" "$INFILE" > "$TEMPFILE"
+        # remove line from working file
+        sed -i '' "/$LINE/d" "$INFILE"
 
-        # Move the temporary file to replace the original file
-        mv "$TEMPFILE" "$INFILE"
+        # Verify the removal
+        #if grep -Fxq "$LINE" "$INFILE"; then
+            #echo "The line was not removed."
+        #else
+            #echo "The line was successfully removed."
+        #fi
         
         ((line_number++))
     done
@@ -447,7 +465,17 @@ check_for_updates() {
 
     # Fetch latest release info from GitHub
     local LATEST_RELEASE_INFO=$(curl -s "$LATEST_VERSION_URL")
+    
+    # Check if curl failed
+    if [ $? -ne 0 ]; then
+        return
+    fi
+    
     local LATEST_VERSION=$(echo "$LATEST_RELEASE_INFO" | jq -r '.tag_name')  # Assuming tag_name represents the version
+    
+    if [ ${#LATEST_VERSION} -eq 0 ]; then
+        return
+    fi
 
     # Compare versions
     if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
@@ -518,9 +546,84 @@ ${padding}${lightred_background}${bold}                                         
 
             # Download the latest version
             curl -L -o "${SCRIPT_DIR}/Insane-iOS-App-Purchaser-Update.sh" "$DOWNLOAD_URL"
+            
+            # Check if curl failed
+            if [ $? -ne 0 ]; then
+                message=""
+        
+                lines=(
+                    "${lightred_background}${bold}                                                  ${lightred_background}${none}"
+                    "${lightred_background}${bold}                  Update Failed.                  ${lightred_background}${none}"
+                    "${lightred_background}${bold}                                                  ${lightred_background}${none}"
+                    "${lightred_background}${bold}          The update failed to download.          ${lightred_background}${none}"
+                    "${lightred_background}${bold}                                                  ${lightred_background}${none}"
+                )
+    
+                cols=$(tput cols)
+    
+                # Loop through each line and process it
+                for line in "${lines[@]}"; do
+    
+                    title_length=50
+                    left_padding=$(( (cols - title_length) / 2 ))
+
+                    padding=$(printf "%*s" "$left_padding" | tr ' ' " ")
+        
+                    padded_line="${padding}${line}"
+        
+                    message=$(cat <<EOF
+$message
+${padded_line}
+EOF
+)
+                done
+    
+                center_message_input "$message" '#' '#' "Press Any Key To Return To Main Menu: " " Update Failed "
+                
+                return
+            fi
     
             local OLD_SCRIPT="${SCRIPT_DIR}/${SCRIPT_NAME}"
             local NEW_SCRIPT="$SCRIPT_DIR/Insane-iOS-App-Purchaser-Update.sh"
+            
+            local file_size=$(wc -c < "$NEW_SCRIPT")
+
+            # Check if the file size is less than 100 characters
+            if [ "$file_size" -lt 100 ]; then
+            
+                message=""
+        
+                lines=(
+                    "${lightred_background}${bold}                                                  ${lightred_background}${none}"
+                    "${lightred_background}${bold}                  Update Failed.                  ${lightred_background}${none}"
+                    "${lightred_background}${bold}                                                  ${lightred_background}${none}"
+                    "${lightred_background}${bold}          The update failed to download.          ${lightred_background}${none}"
+                    "${lightred_background}${bold}                                                  ${lightred_background}${none}"
+                )
+    
+                cols=$(tput cols)
+    
+                # Loop through each line and process it
+                for line in "${lines[@]}"; do
+    
+                    title_length=50
+                    left_padding=$(( (cols - title_length) / 2 ))
+
+                    padding=$(printf "%*s" "$left_padding" | tr ' ' " ")
+        
+                    padded_line="${padding}${line}"
+        
+                    message=$(cat <<EOF
+$message
+${padded_line}
+EOF
+)
+                done
+    
+                center_message_input "$message" '#' '#' "Press Any Key To Return To Main Menu: " " Update Failed "
+                
+                return
+            fi
 
             # Replace the contents of the old script with the new one
             cat "$NEW_SCRIPT" > "$OLD_SCRIPT"
