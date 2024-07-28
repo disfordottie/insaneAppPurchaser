@@ -1,0 +1,9 @@
+com.apple.InstallAssistant.macOSSonoma
+com.apple.InstallAssistant.macOSVentura
+com.apple.InstallAssistant.macOSMonterey
+com.apple.InstallAssistant.macOSBigSur
+com.apple.InstallAssistant.Catalina
+com.apple.InstallAssistant.Mojave
+com.apple.InstallAssistant.HighSierra
+com.apple.InstallAssistant.Sierra
+com.apple.InstallAssistant.ElCapitan2
