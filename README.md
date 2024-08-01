@@ -7,6 +7,16 @@ A script to purchase apps in bulk.
 Apps are frequently removed from the appstore. Hence my thinking was, if I can purchase as many apps as possible, whenever an app is removed I can go download it later from my purchase list.
 - There is now a list of EVERY app on the appstore if your serious about making sure you keep access to them all (Press 2 on main menu)
 
+## Star History
+
+<a href="https://star-history.com/#disfordottie/insaneAppPurchaser&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=disfordottie/insaneAppPurchaser&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=disfordottie/insaneAppPurchaser&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=disfordottie/insaneAppPurchaser&type=Date" />
+ </picture>
+</a>
+
 ## Usage
 
 ### Help! I just want it to open!
