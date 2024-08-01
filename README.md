@@ -7,15 +7,6 @@ A script to purchase apps in bulk.
 Apps are frequently removed from the appstore. Hence my thinking was, if I can purchase as many apps as possible, whenever an app is removed I can go download it later from my purchase list.
 - There is now a list of EVERY app on the appstore if your serious about making sure you keep access to them all (Press 2 on main menu)
 
-### To Do
-
-- [x] Automated ipatool installer
-- [x] Add settings menu
-- [ ] Add Logs/Lists
-- - [ ] Do not purchase again: Successful purchases, already owned,
-- - [ ] Blocked apps for paid apps to not attempt then again on any account.
-- - [ ] Try again: various 1 time errors
-
 ## Star History
 
 <a href="https://star-history.com/#disfordottie/insaneAppPurchaser&Date">
@@ -25,6 +16,15 @@ Apps are frequently removed from the appstore. Hence my thinking was, if I can p
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=disfordottie/insaneAppPurchaser&type=Date" />
  </picture>
 </a>
+
+## To Do
+
+- [x] Automated ipatool installer
+- [x] Add settings menu
+- [ ] Add Logs/Lists
+- - [ ] Do not purchase again: Successful purchases, already owned,
+- - [ ] Blocked apps for paid apps to not attempt then again on any account.
+- - [ ] Try again: various 1 time errors
 
 ## Usage
 
