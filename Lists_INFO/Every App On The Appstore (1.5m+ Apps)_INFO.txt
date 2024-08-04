@@ -15,4 +15,4 @@ running on that.
 Should your computer turn off or the script be interrupted, you can
 continue from where you left of by pressing R on the main menu.
 
-${lightgreen}Happy purchasing!${none}
+${lightgreen}Good luck brave traveller, happy purchasing!${none}
