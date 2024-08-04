@@ -1,5 +1,0 @@
-blah
-
-${purple}test${none}
-
-yayayayay

@@ -1,0 +1,18 @@
+${bold}${lightred}IMPORTANT! READ!${none}
+
+Before starting it is HIGHLY recommended you enable logging via the
+settings menu. This makes sure logs are kept of apps that fail, so
+you can purchase them later without redoing the whole list. It also
+means if you ever do another big list, it skips apps you already own.
+
+If you have any legacy idevices, dont do this on the same Apple ID they
+use. Long purchase lists dont load on old devices. Even if you dont have
+any old devices it is still recomended you do this on an alt account.
+
+This list can take up to 20 days so if you have an old mac, leave it
+running on that.
+
+Should your computer turn off or the script be interrupted, you can
+continue from where you left of by pressing R on the main menu.
+
+${lightgreen}Happy purchasing!${none}
