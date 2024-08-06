@@ -1,6 +1,8 @@
 {
-	"page_count": 2,
-	"page1": "${bold}${lightred}IMPORTANT! READ!${none}
+	"page_count": 2
+}
+
+	pAgE1PaGe1${bold}${lightred}IMPORTANT! READ!${none}
 
 Before starting it is HIGHLY recommended you enable logging via the
 settings menu. This makes sure logs are kept of apps that fail, so
@@ -17,8 +19,9 @@ running on that.
 Should your computer turn off or the script be interrupted, you can
 continue from where you left of by pressing R on the main menu.
 
-${yellow}Page 1 of 2${none}",
-	"page2": "${bold}${lightred}IMPORTANT! READ!${none}
+${yellow}Page 1 of 2${none}pAgE1PaGe1
+
+	pAgE2PaGe2${bold}${lightred}IMPORTANT! READ!${none}
 
 There is no way to speed this up. Running multiple instances of
 the script will cause all purchases to fail as Apple limits requests
@@ -35,5 +38,4 @@ ${bold}Or${none}
 
 Control + C // Then re-run the script and press R on the main menu.
 
-${lightgreen}Good luck brave traveller, happy purchasing!${none}"
-}
+${lightgreen}Good luck brave traveller, happy purchasing!${none}pAgE2PaGe2
