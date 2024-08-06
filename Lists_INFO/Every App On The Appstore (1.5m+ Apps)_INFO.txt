@@ -1,4 +1,6 @@
-${bold}${lightred}IMPORTANT! READ!${none}
+{
+	"page_count": 2,
+	"page1": "${bold}${lightred}IMPORTANT! READ!${none}
 
 Before starting it is HIGHLY recommended you enable logging via the
 settings menu. This makes sure logs are kept of apps that fail, so
@@ -15,4 +17,23 @@ running on that.
 Should your computer turn off or the script be interrupted, you can
 continue from where you left of by pressing R on the main menu.
 
-${lightgreen}Good luck brave traveller, happy purchasing!${none}
+${yellow}Page 1 of 2${none}",
+	"page2": "${bold}${lightred}IMPORTANT! READ!${none}
+
+There is no way to speed this up. Running multiple instances of
+the script will cause all purchases to fail as Apple limits requests
+to one at a time. Meaning if you need to make a purchase on your phone
+you should pause the script. Otherwise keep trying to purchase the app
+on your phone, if you have logging on, apps that fail to purchase will
+be added to a \"try again\" for later anyway.
+
+${bold}To pause the script at any time:${none}
+
+Control + Z // Then command \"fg\" to resume.
+
+${bold}Or${none}
+
+Control + C // Then re-run the script and press R on the main menu.
+
+${lightgreen}Good luck brave traveller, happy purchasing!${none}"
+}
