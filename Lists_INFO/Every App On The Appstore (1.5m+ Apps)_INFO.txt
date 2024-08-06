@@ -1,8 +1,6 @@
-{
-	"page_count": 2
-}
+pAgEcOuNt2pAgEcOuNt
 
-	pAgE1PaGe1${bold}${lightred}IMPORTANT! READ!${none}
+pAgE1PaGe1${bold}${lightred}IMPORTANT! READ!${none}
 
 Before starting it is HIGHLY recommended you enable logging via the
 settings menu. This makes sure logs are kept of apps that fail, so
@@ -21,7 +19,7 @@ continue from where you left of by pressing R on the main menu.
 
 ${yellow}Page 1 of 2${none}pAgE1PaGe1
 
-	pAgE2PaGe2${bold}${lightred}IMPORTANT! READ!${none}
+pAgE2PaGe2${bold}${lightred}IMPORTANT! READ!${none}
 
 There is no way to speed this up. Running multiple instances of
 the script will cause all purchases to fail as Apple limits requests
