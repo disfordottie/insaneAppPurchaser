@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="1.2.1"
+version="1.3"
 
 red=`tput setaf 1`
 red_background='\033[7;91m'
@@ -11,12 +11,16 @@ cyan=`tput setaf 6`
 none=`tput sgr0`
 yellow='\033[1;33m'
 yellow_background='\033[7;93m'
+blue_background='\033[7;94m'
 purple='\033[1;35m'
 lightred='\033[1;31m'
 lightred_background='\033[7;31m'
+blue_background_white_text='\033[97;44m'
+white_background_blue_text='\033[94;47m'
 bold=$(tput bold)
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+HOME_DIR=$(eval echo "~/InsaneAppPurchaser")
 SCRIPT_NAME=$(basename "$0")
 
 center_message_input() {
@@ -25,21 +29,32 @@ center_message_input() {
     local bottom_border_char="$3"
     local input_prompt="$4"
     local title="$5"
+    local variable="$6"
 
     # Get the terminal dimensions
     local rows=$(tput lines)
     local cols=$(tput cols)
 
     # Calculate the number of lines in the message
-    local message_lines=$(echo "$message" | wc -l)
+    #local message_lines=$(echo "$message" | wc -l)
+    
+    if [[ "$variable" == "--bsod-sad" ]]; then
+        local message_lines=$(($(echo "$message" | wc -l) + 10))
+    else
+        local message_lines=$(echo "$message" | wc -l)
+    fi
     
     # Calculate the vertical position for the message, considering the number of message lines
     local top_padding=$(( (rows - message_lines) / 2 ))
     local bottom_padding=$(( rows - message_lines - top_padding - 2 ))
-
+    
     # Clear the screen
     #clear
     echo -e "\n"
+    
+    if [[ "$variable" == "--bsod" ]] || [[ "$variable" == "--bsod-sad" ]]; then
+        printf "${white_background_blue_text}${bold}"
+    fi
 
     # Calculate the padding for the title
     local title_length=${#title}
@@ -49,7 +64,14 @@ center_message_input() {
     # Print the top border with the title centered
     printf "%*s" "$left_padding" | tr ' ' "$top_border_char"
     printf "%s" "$title"
-    printf "%*s\n" "$right_padding" | tr ' ' "$top_border_char"
+    #printf "%*s\n" "$right_padding" | tr ' ' "$top_border_char"
+    
+    if [[ "$variable" == "--bsod" ]] || [[ "$variable" == "--bsod-sad" ]]; then
+        printf "%*s" "$right_padding" | tr ' ' "$top_border_char"
+        printf "${none}${blue_background_white_text}\n"
+    else
+        printf "%*s\n" "$right_padding" | tr ' ' "$top_border_char"
+    fi
 
     # Print empty lines until reaching the vertical position
     for ((i = 1; i < top_padding; i++)); do
@@ -57,27 +79,60 @@ center_message_input() {
     done
     
     # Print the message aligned to the left
-    echo -e "$message"
+    #echo -e "$message"
+    
+    if [[ "$variable" == "--bsod-sad" ]]; then
+        echo -e "${blue_background_white_text}               ##${blue_background_white_text}
+${blue_background_white_text}              ## ${blue_background_white_text}
+${blue_background_white_text}     ##      ##  ${blue_background_white_text}
+${blue_background_white_text}             ##  ${blue_background_white_text}
+${blue_background_white_text}             ##  ${blue_background_white_text}
+${blue_background_white_text}     ##      ##  ${blue_background_white_text}
+${blue_background_white_text}              ## ${blue_background_white_text}
+${blue_background_white_text}               ##${blue_background_white_text}
+${blue_background_white_text}${blue_background_white_text}
+${blue_background_white_text}${blue_background_white_text}
+$message"
+    else
+        echo -e "$message"
+    fi
 
     # Print empty lines until reaching the bottom row
     for ((i = 0; i < bottom_padding; i++)); do
         printf "\n"
     done
-
+    
+    if [[ "$variable" == "--bsod" ]] || [[ "$variable" == "--bsod-sad" ]]; then
+        printf "${white_background_blue_text}${bold}"
+    fi
+    
     # Print the bottom border
-    printf '%*s\n' "$cols" '' | tr ' ' "$bottom_border_char"
+    #printf '%*s\n' "$cols" '' | tr ' ' "$bottom_border_char"
+    
+    if [[ "$variable" == "--bsod" ]] || [[ "$variable" == "--bsod-sad" ]]; then
+        printf '%*s' "$cols" '' | tr ' ' "$bottom_border_char"
+        printf "${none}${blue_background_white_text}\n"
+    else
+        printf '%*s\n' "$cols" '' | tr ' ' "$bottom_border_char"
+    fi
 
     # Read user input with the provided prompt
-    read -p "$input_prompt" -r -n 1 choice
+    if [[ "$variable" == "--long" ]]; then
+        read -p "$input_prompt" -r choice
+    elif [[ "$variable" == "--sensitive" ]]; then
+        read -p "$input_prompt" -r -s choice
+    else
+        read -p "$input_prompt" -r -n 1 choice
+    fi
+    
+    printf "${none}"
     
     export choice
 }
 
-
 main_menu() {
 
-    local choices='[[ "$choice" != "1" && "$choice" != "2" ]]'
-
+    local choices='[[ "$choice" != "1" && "$choice" != "2" && "$choice" != "3" ]]'
     local message="${bold}Insane iOS App Purchaser, $version by ${cyan}@disfordottie${none}
 
 
@@ -85,13 +140,13 @@ This script purchases apps in bulk using a list of Bundle ID's.
 
 1. Use my own list
 
-2. Browse existing lists"
+2. Browse existing lists
 
-    # Define the path to the file
-    local WORKING_LIST="${SCRIPT_DIR}/workingList.txt"
+3. Settings"
+
 
     # Check if the file exists
-    if [[ -f "$WORKING_LIST" ]]; then
+    if [[ -f "${HOME_DIR}/workingList.txt" ]]; then
         #exists
         message=$(cat <<EOF
 $message
@@ -106,7 +161,7 @@ ${yellow_background}${bold}   Warning!                                       ${y
 EOF
 )
     
-        choices='[[ "$choice" != "1" && "$choice" != "2" && "$choice" != "R" && "$choice" != "r" ]]'
+        choices='[[ "$choice" != "1" && "$choice" != "2" && "$choice" != "3" && "$choice" != "R" && "$choice" != "r" ]]'
     
     fi
     
@@ -124,24 +179,226 @@ ${lightred}${bold}\"$choice\" is not a valid option${none}" '#' '#' "Choice: " "
         pruchase "workingList"
         return
     fi
+    
+    local last_line=$(ipatool download -b com 2>&1 | tail -n 1)
+    while True; do
+        if [[ "$last_line" =~ "failed to get account" ]] || [[ "$last_line" =~ "failed to reoslve the country code" ]]; then
+        
+            ipatool auth revoke
+            
+            center_message_input "${yellow}${bold}ipatool is installed but hasn't been configured.${none}
 
-    center_message_input "${yellow}${bold}Make sure you have ipatool installed (https://github.com/majd/ipatool)${none}
+
+Press any key to configure it now.
 
 
-Ensure you have authenticated it using
+Or do it yourself with: (ipatool auth login -e <your appleid>)
+" '#' '#' "Press Any Key To Configure ipatool: " " Prerequisites "
+            
+            configure_ipatool
+            break
+    
+        elif [[ "$last_line" =~ "command not found" ]]; then
+        
+            center_message_input "${lightred}${bold}ipatool is required but couldn't be found.${none}
 
-(ipatool auth login -e <your appleid>)
+
+${purple}Press any key to install it now.${none}
 
 
-Thanks majd for making ipatool
-" '#' '#' "Press Any Key To Continue: " " Prerequisites "
+Or Install it yourself at (https://github.com/majd/ipatool)
+" '#' '#' "Press Any Key To Install ipatool: " " Prerequisites "
+
+            if ! install_ipatool; then
+                center_message_input "${lightred}${bold}An error occurred during the installation of ipatool.${none}" '#' '#' "Press Any Key To Continue: " " Prerequisites "
+                
+            else
+                last_line=$(ipatool download -b com 2>&1 | tail -n 1)
+                if [[ "$last_line" =~ "failed to get account" ]]; then
+                    center_message_input "${lightgreen}${bold}ipatool was installed successfully.${none}
+                    
+${yellow}${bold}You must configure it before use.${none}" '#' '#' "Press Any Key To Configure ipatool: " " Prerequisites "
+
+                    configure_ipatool
+                    
+                    break
+                else
+                    center_message_input "${lightgreen}${bold}ipatool was installed successfully.${none}" '#' '#' "Press Any Key To Continue: " " Prerequisites "
+                    
+                    break
+                fi
+            fi
+            
+        else
+        
+            break
+        
+        fi
+    done
+
 
     if [ "$list_option" == "1" ]; then
         manual
-    else
+    elif [ "$list_option" == "2" ]; then
         existing
+    elif [ "$list_option" == "3" ]; then
+        settings
     fi
 
+}
+
+settings() {
+    local signOutMessage=""
+    while True; do
+        # Check if the directory exists
+        if [ -f ~/InsaneAppPurchaser/enableLogging ]; then
+            local loggingStatus="Disable Purchase Logging"
+            local loggingMessage="
+            
+${green_background}                                                       ${none}
+${green_background}   Logs are currently enabled and will be saved to:    ${none}
+${green_background}      ~/InsaneAppPurchaser/logs/                       ${none}
+${green_background}   Lists will be kept of already purchased apps and    ${none}
+${green_background}   invalid apps to save time proccessing big lists.    ${none}
+${green_background}                                                       ${none}"
+        else
+            local loggingStatus="Enable Purchase Logging (Recommended)"
+            local loggingMessage=""
+        fi
+    
+        local message="${bold}Settings${none}
+
+1. ${loggingStatus}
+
+2. Sign out of ipatool
+
+3. Re-Purchase Failed Apps
+
+4. Main Menu${loggingMessage}${signOutMessage}"
+
+        center_message_input "$message" '#' '#' "Choice: " " Settings "
+    
+        while [[ "$choice" != "1" && "$choice" != "2" && "$choice" != "3" && "$choice" != "4" ]]; do
+            center_message_input "$message
+
+${lightred}${bold}\"$choice\" is not a valid option${none}" '#' '#' "Choice: " " Settings "
+        done
+    
+        if [ "$choice" == "1" ]; then
+            if [ ! -f ~/InsaneAppPurchaser/enableLogging ]; then
+                touch ~/InsaneAppPurchaser/enableLogging
+            else
+                rm ~/InsaneAppPurchaser/enableLogging
+            fi
+            
+            signOutMessage=""
+        elif [ "$choice" == "2" ]; then
+            ipatool auth revoke
+            signOutMessage="
+            
+${yellow_background}                                                       ${none}
+${yellow_background}   ipatool has been been sined out                     ${none}
+${yellow_background}                                                       ${none}"
+        elif [ "$choice" == "3" ]; then
+            local last_line=$(ipatool auth info --format json 2>&1 | tail -n 1)
+            local appleID=$(echo "$last_line" | jq -r '.email')
+            if [ -f "${HOME_DIR}/logs/${appleID}/try_again.txt" ]; then
+                cp "${HOME_DIR}/logs/${appleID}/try_again.txt" "${HOME_DIR}/existingList.txt"
+                pruchase "existingList"
+                return
+            else
+                center_message_input "   No list of purchases to retry could be found." '#' '#' "Press Any Key To Continue: " " Womp Womp " --bsod-sad
+                main_menu
+                return
+            fi
+        else
+            main_menu
+            return
+        fi
+    done
+}
+
+install_ipatool() {
+    # Define variables
+    RELEASE_API_URL="https://api.github.com/repos/majd/ipatool/releases/latest"
+    INSTALL_DIR="/usr/local/bin"
+
+    # Fetch the latest release tag
+    LATEST_RELEASE_INFO=$(curl -s "$RELEASE_API_URL")
+    LATEST_VERSION=$(echo "$LATEST_RELEASE_INFO" | jq -r '.tag_name' | sed 's/^v//')
+
+    # Detect architecture
+    ARCH=$(uname -m)
+    if [[ "$ARCH" == "arm64" ]]; then
+        ARCHIVE_NAME="ipatool-${LATEST_VERSION}-macos-arm64.tar.gz"
+    else
+        ARCHIVE_NAME="ipatool-${LATEST_VERSION}-macos-amd64.tar.gz"
+    fi
+
+    mkdir -p "${HOME_DIR}/temp"
+
+    # Download the appropriate release archive
+    DOWNLOAD_URL="https://github.com/majd/ipatool/releases/download/v$LATEST_VERSION/$ARCHIVE_NAME"
+    curl -L -o "${HOME_DIR}/temp/$ARCHIVE_NAME" "$DOWNLOAD_URL"
+            
+    # Extract the archive
+    tar -xvzf "${HOME_DIR}/temp/$ARCHIVE_NAME" -C "${HOME_DIR}/temp/" || { echo -e "${lightred}${bold}Error: Failed to extract ${ARCHIVE_NAME}${none}"; rm -rf "${HOME_DIR}/temp/"; return 1; }
+
+    if [[ -f "${HOME_DIR}/temp/bin/ipatool-${LATEST_VERSION}-macos-${ARCH}" ]]; then
+        mv "${HOME_DIR}/temp/bin/ipatool-${LATEST_VERSION}-macos-${ARCH}" "$INSTALL_DIR/ipatool"
+    else
+        echo -e "${lightred}${bold}Error: Extracted binary not found.${none}"
+        rm -rf "${HOME_DIR}/temp/"
+        return 1
+    fi
+
+    # Clean up
+    rm -rf "${HOME_DIR}/temp/"
+            
+    echo -e "${purple}${bold}###################################${none}"
+    echo -e "${purple}${bold}# If prompted enter your password #${none}"
+    echo -e "${purple}${bold}###################################${none}"
+    chmod -R +x "$INSTALL_DIR/ipatool"
+    
+    local last_line=$(ipatool auth info 2>&1 | tail -n 1)
+    if [[ "$last_line" =~ "command not found" ]]; then
+        echo -e "${lightred}${bold}Error: command not found: ipatool${none}"
+        rm -rf "${HOME_DIR}/temp/bin"
+        return 1
+    fi
+}
+
+configure_ipatool() {
+    while True; do
+        center_message_input "For ipatool to function it has to authenticate with the Appstore.
+        
+${purple}${bold}Enter your Apple ID email.${none}" '#' '#' "Apple ID Email: " " Prerequisites " --long
+        local email="$choice"
+    
+        center_message_input "${purple}${bold}Enter your Apple ID password.${none}
+        
+        
+${yellow_background}                                                           ${yellow_background}
+${yellow_background}${bold}   Important!                                              ${yellow_background}
+   If you get a message asking for keychain access,        ${yellow_background}
+   choose \"Always Allow\". This is neccasary to remember    ${yellow_background}
+   your login and prevent having to re-login every time.   ${yellow_background}
+                                                           ${none}" '#' '#' "Apple ID Password: " " Prerequisites " --sensitive
+        local password="$choice"
+        
+        ipatool auth login -e ${email} -p ${password}
+        
+        local last_line=$(ipatool download -b com 2>&1 | tail -n 1)
+        if [[ "$last_line" =~ "failed to get account" ]] || [[ "$last_line" =~ "failed to reoslve the country code" ]]; then
+            ipatool auth revoke
+            center_message_input "${lightred}${bold}Your Apple ID email/password was incorrect.
+        
+Or a 2FA code was not provided when prompted.${none}" '#' '#' "Press Any Key To Retry: " " Prerequisites "
+        else
+        center_message_input "${lightgreen}${bold}ipatool was configured successfully.${none}" '#' '#' "Press Any Key To Continue: " " Prerequisites "
+            return
+        fi
+    done
 }
 
 manual() {
@@ -156,7 +413,39 @@ The file should be in the formt: bundle id (new line) bundle id (new line) etc.
 " '#' '#' "Press Any Key To Start: " " Own List "
     
     if [ -e "$SCRIPT_DIR/bundleIds.txt" ]; then
-        pruchase "bundleIds"
+        local line_count=$(awk 'END {print NR}' "$SCRIPT_DIR/bundleIds.txt")
+        
+        if [ -f "${HOME_DIR}/enableLogging" ]; then
+            center_message_input "${purple}${bold}Ready to start.${none}
+    
+${bold}Your list contains $line_count apps.${none}" '#' '#' "Press Any Key To Continue: " " Own List "
+        
+            local message="${yellow}${bold}Skip apps you already own?${none}
+    
+${bold}Because you have logging enabled you ca skip apps you already own.${none}"
+
+            center_message_input "${message}" '#' '#' "Skip Owned Apps? [y/n]: " " Own List "
+            
+            while [[ "$choice" != "y" && "$choice" != "Y" && "$choice" != "n" && "$choice" != "N" ]]; do
+                center_message_input "${message}
+            
+${lightred}${bold}\"$choice\" is not a valid option${none}" '#' '#' "Skip Owned Apps? [y/n]: " " Own List "
+            done
+        
+            if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
+                clean_list "bundleIds"
+                pruchase "cleanList"
+            else
+                pruchase "bundleIds"
+            fi
+            
+        else
+            enter_message_input "${purple}${bold}Ready to start.${none}
+    
+${bold}Your list contains $line_count apps.${none}" '#' '#' "Press Any Key To Start: " " Own List "
+            pruchase "bundleIds"
+        fi
+             
     else
         center_message_input "${lightred}${bold}bundleIds.txt file not found.${none}" '#' '#' "Press Any Key To Return To Main Menu: " " Own List "
         main_menu
@@ -220,55 +509,212 @@ ${lightred}${bold}Choose a number from 1 to $file_count${none}" '#' '#' "List to
     local file_name=$(basename "$url" | sed 's/\.[^.]*$//')
 
     # Download the file as appIds.txt
-    curl -o "$SCRIPT_DIR/existingList.txt" "$url"
+    curl -o "${HOME_DIR}/existingList.txt" "$url"
 
     file_name=$(echo "$file_name" | sed 's/%20/ /g')
     file_name=$(echo "$file_name" | sed 's/%26/\&/g')
     file_name=$(echo "$file_name" | sed 's/%2B/+/g')
     echo "File downloaded as 'existingList.txt'. (Original: $file_name)"
     
-    local line_count=$(awk 'END {print NR}' "$SCRIPT_DIR/existingList.txt")
-    center_message_input "${purple}${bold}Ready to start.${none}
+    #######show info about list
+    local info_url=${url/.txt/_INFO.txt}
+    info_url="${info_url/Lists/Lists_INFO}"
+    
+    if curl --output /dev/null --silent --head --fail "${info_url}"; then
+        echo "MESSAGE HAS INFO FILE"
+        # If the file exists, download and display its contents
+        local wiseWords=$(curl -s "$info_url")
+        local page_count=$(echo "$wiseWords" | jq -r '.page_count')
+        for ((CURRENTPAGE=1; CURRENTPAGE<=page_count; CURRENTPAGE++)); do
+            echo "$CURRENTPAGE"
+            local key_action=""
+            if [ $CURRENTPAGE -eq $page_count ]; then
+                key_action="Start"
+            else
+                key_action="Continue"
+            fi
+            
+            local page_info=""
+            if [ "$page_count" -gt 1 ]; then
+                page_info=" | Page ${CURRENTPAGE} of ${page_count}"
+            fi
+            
+            local page_contents=$(echo "$wiseWords" | jq -r ".page${CURRENTPAGE}")
+            page_contents="$(eval "echo -e \"$page_contents\"")"
+            
+            center_message_input "$page_contents" '#' '#' "Press Any Key To ${key_action}: " " List Information${page_info} "
+        done
+    else
+        echo "No findo file not found at $info_url"
+    fi
+    
+    local line_count=$(awk 'END {print NR}' "${HOME_DIR}/existingList.txt")
+    
+    if [ -f "${HOME_DIR}/enableLogging" ]; then
+        center_message_input "${purple}${bold}Ready to start.${none}
+    
+${bold}The list \"$file_name\" contains $line_count apps.${none}" '#' '#' "Press Any Key To Continue: " " Existing List "
+        
+        local message="${yellow}${bold}Skip apps you already own?${none}
+    
+${bold}Because you have logging enabled you ca skip apps you already own.${none}"
+
+        center_message_input "${message}" '#' '#' "Skip Owned Apps? [y/n]: " " Existing List "
+        
+        while [[ "$choice" != "y" && "$choice" != "Y" && "$choice" != "n" && "$choice" != "N" ]]; do
+            center_message_input "${message}
+            
+${lightred}${bold}\"$choice\" is not a valid option${none}" '#' '#' "Skip Owned Apps? [y/n]: " " Existing List "
+        done
+        
+        if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
+            clean_list "existingList"
+            pruchase "cleanList"
+        else
+            pruchase "existingList"
+        fi
+            
+    else
+        enter_message_input "${purple}${bold}Ready to start.${none}
     
 ${bold}The list \"$file_name\" contains $line_count apps.${none}" '#' '#' "Press Any Key To Start: " " Existing List "
+        pruchase "existingList"
+    fi
     
-    pruchase "existingList"
 }
 
 pruchase() {
 
-    local success_count=0
-    local license_exists_count=0
-    local json_unmarshal_count=0
-    local no_host_count=0
-    local app_not_found_count=0
-    local other_error_count=0
+    local success_count=0                   # successful purchase
+    
+    local license_exists_count=0            # app already owned
+    local json_unmarshal_count=0            # wierd error
+    local no_host_count=0                   # couldnt connect to apples servers
+    local app_not_found_count=0             # app not in this country / region or is invalid / removed
+    local paid_app_count=0                  # app costs money and will add to never try again list
+    local multiple_requests_count=0         # too many requests to buy at once
+    local failed_count=0                    # title
+    
+    #local account_errors_count=0         # too many requests to buy at once
+    #local country_code_count=0              # happens when account is locked or not signed in RE LOGIN
+    #local password_changed_count=0          # account lockedd alternate error RE LOGIN
+    
+    local other_error_count=0      # error not listed in any other list
+    
+    
+    local last_line=""
+    
+    # make log files
+    if [ -f "${HOME_DIR}/enableLogging" ]; then
+    
+        last_line=$(ipatool auth info --format json 2>&1 | tail -n 1)
+        appleID=$(echo "$last_line" | jq -r '.email')
+        
+        #if files/folders dont exist make them
+        if [ ! -d "${HOME_DIR}/logs/${appleID}" ]; then
+            mkdir -p "${HOME_DIR}/logs/${appleID}"
+        fi
+        
+        #owned items
+        if [ ! -f "${HOME_DIR}/logs/${appleID}/owned_items.txt" ]; then
+            touch "${HOME_DIR}/logs/${appleID}/owned_items.txt"
+        fi
+        
+        #try again
+        if [ ! -f "${HOME_DIR}/logs/${appleID}/try_again.txt" ]; then
+            touch "${HOME_DIR}/logs/${appleID}/try_again.txt"
+        fi
+        
+        #do not bother
+        if [ ! -f "${HOME_DIR}/logs/${appleID}/paid_items.txt" ]; then
+            touch "${HOME_DIR}/logs/${appleID}/paid_items.txt"
+        fi
+        
+        #failed
+        if [ ! -f "${HOME_DIR}/logs/${appleID}/failed_items.txt" ]; then
+            touch "${HOME_DIR}/logs/${appleID}/failed_items.txt"
+        fi
+    fi
+    
     
     local file_name="$1"
+    local total_apps=0
     
-    # Define the input file
-    local INFILE=${SCRIPT_DIR}/$file_name.txt
+    local did_workingInfo_exist=0
     
     #echo "$INFILE"
+    if [ "$file_name" = "existingList" ]; then
     
-    if [ "$file_name" != "workingList" ]; then
-        cp "$INFILE" "${SCRIPT_DIR}/workingList.txt"
-        INFILE="${SCRIPT_DIR}/workingList.txt"
+        # Define the input file
+        local INFILE="${HOME_DIR}/existingList.txt"
+        
+        cp "${INFILE}" "${HOME_DIR}/workingList.txt"
+        INFILE="${HOME_DIR}/workingList.txt"
+        total_apps=$(awk 'END {print NR}' "${HOME_DIR}/existingList.txt")
+        
+        touch "${HOME_DIR}/workingInfo.json"
+        
+    elif [ "$file_name" = "bundleIds" ]; then
+    
+        # Define the input file
+        local INFILE="${SCRIPT_DIR}/$file_name.txt"
+        INFILE=$(eval echo "$INFILE")
+        
+        cp "${INFILE}" "${HOME_DIR}/workingList.txt"
+        INFILE="${HOME_DIR}/workingList.txt"
+        total_apps=$(awk 'END {print NR}' "${SCRIPT_DIR}/bundleIds.txt")
+        
+        touch "${HOME_DIR}/workingInfo.json"
+        
+    elif [ "$file_name" = "cleanList" ]; then
+    
+        # Define the input file
+        local INFILE="${HOME_DIR}/cleanList.txt"
+        INFILE=$(eval echo "$INFILE")
+        
+        cp "${INFILE}" "${HOME_DIR}/workingList.txt"
+        INFILE="${HOME_DIR}/workingList.txt"
+        total_apps=$(awk 'END {print NR}' "${HOME_DIR}/cleanList.txt")
+        
+        touch "${HOME_DIR}/workingInfo.json"
         
     else
+    
+        local INFILE="${HOME_DIR}/workingList.txt"
         
         # Count the number of lines in the file
         local line_count=$(wc -l < "$INFILE" | tr -d ' ')
 
         # Check if the last character of the file is a newline
-        local last_char=$(tail -c 1 "$WORKING_LIST")
+        local last_char=$(tail -c 1 "$INFILE")
 
         # If the last character is not a newline, increment the line count
         if [ "$last_char" != "" ]; then
             ((line_count++))
         fi
         
-        center_message_input "${purple}There are ${line_count} apps left to proccess.${none}" '#' '#' "Press Any Key To Start: " " Resume "
+        if [ -f "${HOME_DIR}/workingInfo.json" ]; then
+            did_workingInfo_exist=1
+            # Specify the path to the JSON file
+            local json_file="${HOME_DIR}/workingInfo.json"
+
+            # Load JSON content into variables
+            total_apps=$(jq -r '.total_apps' "$json_file")
+            success_count=$(jq -r '.success_count' "$json_file")
+            license_exists_count=$(jq -r '.license_exists_count' "$json_file")
+            json_unmarshal_count=$(jq -r '.json_unmarshal_count' "$json_file")
+            no_host_count=$(jq -r '.no_host_count' "$json_file")
+            app_not_found_count=$(jq -r '.app_not_found_count' "$json_file")
+            paid_app_count=$(jq -r '.paid_app_count' "$json_file")
+            multiple_requests_count=$(jq -r '.multiple_requests_count' "$json_file")
+            failed_count=$(jq -r '.failed_count' "$json_file")
+            other_error_count=$(jq -r '.other_error_count' "$json_file")
+            
+            local display_total=" out of ${total_apps}"
+        fi
+        
+        center_message_input "${purple}There are ${line_count}${display_total} apps left to proccess.${none}" '#' '#' "Press Any Key To Start: " " Resume "
+
     fi
 
     local line_number=1
@@ -277,36 +723,160 @@ pruchase() {
     for ((i=1; i<=rows; i++)); do
         echo -e "\n"
     done
-
+    
+    local wokring_file_total=$(awk 'END {print NR}' "${HOME_DIR}/workingList.txt")
+    
     # Read the input file line by line using a for loop
     local IFS=$'\n' # set the Internal Field Separator to newline
-    for LINE in $(cat "$INFILE")
+    
+    for LINE in $(cat $INFILE)
     do
-        echo "### Processing line number: $line_number"
-        echo "### $LINE"
+        while True; do
+            if [ "$total_apps" -gt 0 ]; then
+                echo "### Processing line number: $(( $line_number + ($total_apps - $wokring_file_total))) of ${total_apps} ($((( $total_apps - ( $line_number + ($total_apps - $wokring_file_total))) + 1 )) remaining)"
+                echo "### $LINE"
+            else
+                echo "### Processing line number: $line_number"
+                echo "### $LINE"
+            
+            fi
         
-        #ipatool purchase -b "$LINE"
-        local last_line=$(ipatool purchase -b "$LINE" 2>&1 | tail -n 1)
-        echo "$last_line"
+            #ipatool purchase -b "$LINE"
+            last_line=$(ipatool purchase -b "$LINE" 2>&1 | tail -n 1)
+            echo "$last_line"
 
-        # Check the last line for the specific phrases and tally their occurrences
-        if [[ "$last_line" =~ "success" ]] && [[ "$last_line" =~ "true" ]] && [[ "$last_line" =~ "INF" ]]; then
-            ((success_count++))
-        elif [[ "$last_line" =~ "license already exists" ]]; then
-            ((license_exists_count++))
-        elif [[ "$last_line" =~ "failed to unmarshal json" ]]; then
-            ((json_unmarshal_count++))
-        elif [[ "$last_line" =~ "no such host" ]]; then
-            ((no_host_count++))
-        elif [[ "$last_line" =~ "app not found" ]]; then
-            ((app_not_found_count++))
-        else
-            ((other_error_count++))
-        fi
+
+            # Check the last line for the specific phrases and tally their occurrences
+        
+            ############ OWNED_ITEMS LIST
+        
+            if [[ "$last_line" =~ "success" ]] && [[ "$last_line" =~ "true" ]] && [[ "$last_line" =~ "INF" ]]; then
+                ((success_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log owned_items $LINE
+                fi
+                break
+            
+            elif [[ "$last_line" =~ "license already exists" ]]; then
+                ((license_exists_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log owned_items $LINE
+                fi
+                break
+                
+            elif [[ "$last_line" =~ "You can't restore this app on this device" ]]; then
+                ((license_exists_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log owned_items $LINE
+                fi
+                break
+                
+            ############ FAILED_ITEMS LIST
+            
+            elif [[ "$last_line" =~ "failed to unmarshal json" ]]; then
+                ((json_unmarshal_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log failed_items $LINE
+                fi
+                break
+            
+            elif [[ "$last_line" =~ "app not found" ]]; then
+                ((app_not_found_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log failed_items $LINE
+                fi
+                break
+            
+            ############ TRY_AGAIN LIST
+        
+            elif [[ "$last_line" =~ "no such host" ]]; then
+                ((no_host_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log try_again $LINE
+                fi
+                break
+        
+            elif [[ "$last_line" =~ "failed to purchase app" ]]; then
+                ((failed_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log try_again $LINE
+                fi
+                break
+            
+            elif [[ "$last_line" =~ "temporarily unable to process your request" ]]; then
+                ((multiple_requests_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log try_again $LINE
+                fi
+                break
+        
+            ############ (ACCOUNT LOCKED)
+        
+            elif [[ "$last_line" =~ "country code mapping for store front" ]] || [[ "$last_line" =~ "Your password has changed" ]]; then
+                local paused_message="${yellow}Purchasing has been automatically paused.${none}
+
+An account related error has occured, these are generally
+caused by your Apple ID being locked/disabled.
+
+Please check if your account is locked (if so unlock it),
+then type \"CONTINUE\" below to sign into ipatool again.
+
+Once resolved, purchasing will continue as normal."
+            
+                center_message_input "$paused_message" '#' '#' "Type \"CONTINUE\" to sign into ipatool: " " Paused " --long
+
+                while [[ "$choice" != "CONTINUE" && "$choice" != "continue" && "$choice" != "Continue" ]]; do
+                    center_message_input "$paused_message
+
+${lightred}${bold}\"$choice\" is not a valid option${none}" '#' '#' "Type \"CONTINUE\" to sign into ipatool: " " Paused " --long
+                done
+            
+                ipatool auth revoke
+            
+                configure_ipatool
+                
+                last_line=$(ipatool auth info --format json 2>&1 | tail -n 1)
+                appleID=$(echo "$last_line" | jq -r '.email')
+            
+            ############ PAID_ITEMS LIST
+            elif [[ "$last_line" =~ "paid" ]]; then
+                ((paid_app_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log paid_items $LINE
+                fi
+                break
+        
+            ############ UNKOWN SO ADD TO TRY_AGAIN LIST (AGAIN)
+            else
+                ((other_error_count++))
+                if [ -f "${HOME_DIR}/enableLogging" ]; then
+                    add_to_log try_again $LINE
+                fi
+                break
+            fi
+        done
         
         # remove line from working file
-        sed -i '' "/$LINE/d" "$INFILE"
-
+        sed -i '' "/^$LINE$/d" "$INFILE"
+        
+        local json_contents="$(cat <<EOF
+        {
+            "total_apps": "$total_apps",
+            "success_count": "$success_count",
+            "license_exists_count": $license_exists_count,
+            "json_unmarshal_count": "$json_unmarshal_count",
+            "no_host_count": "$no_host_count",
+            "app_not_found_count": $app_not_found_count,
+            "paid_app_count": "$paid_app_count",
+            "multiple_requests_count": "$multiple_requests_count",
+            "failed_count": $failed_count,
+            "other_error_count": "$other_error_count"
+        }
+        EOF
+        )"
+        
+        echo "$json_contents" > "${HOME_DIR}/workingInfo.json"
+            
         # Verify the removal
         #if grep -Fxq "$LINE" "$INFILE"; then
             #echo "The line was not removed."
@@ -318,6 +888,8 @@ pruchase() {
     done
     
     rm "$INFILE"
+    rm "${HOME_DIR}/workingInfo.json"
+    rm "${HOME_DIR}/existingList.txt"
     
     ((line_number--))
     
@@ -347,7 +919,7 @@ EOF
     fi
     
     #errors title
-    if (( success_count > 0 && (license_exists_count > 0 || json_unmarshal_count > 0 || no_host_count > 0 || app_not_found_count > 0 || other_error_count > 0) )); then
+    if (( success_count > 0 && (license_exists_count > 0 || json_unmarshal_count > 0 || no_host_count > 0 || app_not_found_count > 0 || other_error_count > 0 || paid_app_count > 0 || multiple_requests_count > 0 || failed_count > 0) )); then
         status_message=$(cat <<EOF
 $status_message
  
@@ -416,6 +988,51 @@ EOF
 )
     fi
     
+    #paid_app_count erros
+    if [ "$paid_app_count" -eq 1 ]; then
+        status_message=$(cat <<EOF
+$status_message
+${red}${bold}1 app couldnt be pruchased because it costs money.${none}
+EOF
+)
+    elif [ "$paid_app_count" -gt 1 ]; then
+        status_message=$(cat <<EOF
+$status_message
+${red}${bold}$paid_app_count apps couldnt be pruchased because they cost money.${none}
+EOF
+)
+    fi
+    
+    #multiple_requests_count erros
+    if [ "$multiple_requests_count" -eq 1 ]; then
+        status_message=$(cat <<EOF
+$status_message
+${red}${bold}1 app couldnt be pruchased because because of multiple simultaneous requests.${none}
+EOF
+)
+    elif [ "$multiple_requests_count" -gt 1 ]; then
+        status_message=$(cat <<EOF
+$status_message
+${red}${bold}$multiple_requests_count apps couldnt be pruchased because of multiple simultaneous requests.${none}
+EOF
+)
+    fi
+    
+    #failed_count erros
+    if [ "$failed_count" -eq 1 ]; then
+        status_message=$(cat <<EOF
+$status_message
+${red}${bold}1 app failed to purchase for unkown reasons.${none}
+EOF
+)
+    elif [ "$failed_count" -gt 1 ]; then
+        status_message=$(cat <<EOF
+$status_message
+${red}${bold}$failed_count apps failed to purchase for unkown reasons.${none}
+EOF
+)
+    fi
+    
     #other erros
     if [ "$other_error_count" -eq 1 ]; then
         status_message=$(cat <<EOF
@@ -431,16 +1048,28 @@ EOF
 )
     fi
     
-    status_message=$(cat <<EOF
+    
+    if [ "$did_workingInfo_exist" -eq 1 ] && [ "$1" = "workingList" ]; then
+        status_message=$(cat <<EOF
+${purple}${bold}$total_apps apps total were processed.${none}
+$status_message
+EOF
+)
+    elif [ "$1" = "workingList" ]; then
+        status_message=$(cat <<EOF
+${purple}${bold}$line_number apps total were processed this session.${none}
+$status_message
+EOF
+)
+    else
+        status_message=$(cat <<EOF
 ${purple}${bold}$line_number apps total were processed.${none}
 $status_message
 EOF
 )
-
-    if [[ "$file_name" == "existingList" ]]; then
-        rm ${SCRIPT_DIR}/existingList.txt
     fi
-    
+
+
     if [ "$line_number" -eq 0 ]; then
         center_message_input "${lightred}${bold}The list was empty, hence no apps where purchased.${none}" '#' '#' "Press Any Key To Return To Main Menu: " " Process Complete "
     else
@@ -448,7 +1077,7 @@ EOF
     fi
     
     main_menu
-    
+    return
 }
 
 
@@ -687,13 +1316,88 @@ EOF
     
 }
 
+add_to_log() {
 
+    local file="${1}.txt"
+    local dir="${HOME_DIR}/logs/${appleID}"
 
+    # Check if the string already exists in the file
+    if ! grep -Fxq "$2" "${dir}/${file}"; then
+        # If not, append the string to the file
+        echo "$2" >> "${dir}/${file}"
+    fi
+}
+
+clean_list() {
+    local file_name="$1"
+    if [ "$file_name" = "existingList" ]; then
+    
+        # Define the input file
+        local INFILE="${HOME_DIR}/existingList.txt"
+        
+        cp "${INFILE}" "${HOME_DIR}/cleanList.txt"
+        INFILE="${HOME_DIR}/cleanList.txt"
+        
+    elif [ "$file_name" = "bundleIds" ]; then
+    
+        # Define the input file
+        local INFILE="${SCRIPT_DIR}/bundleIds.txt"
+        
+        cp "${INFILE}" "${HOME_DIR}/cleanList.txt"
+        INFILE="${HOME_DIR}/cleanList.txt"
+    fi
+            
+            
+    last_line=$(ipatool auth info --format json 2>&1 | tail -n 1)
+    appleID=$(echo "$last_line" | jq -r '.email')
+    
+    local removed_items_count=0
+    
+    #owned items
+    if [ -f "${HOME_DIR}/logs/${appleID}/owned_items.txt" ]; then
+        for LINE in $(cat "${HOME_DIR}/logs/${appleID}/owned_items.txt"); do
+            if grep -q "^$LINE$" "$INFILE"; then
+                sed -i '' "/^$LINE$/d" "$INFILE"
+                ((removed_items_count++))
+            fi
+        done
+    fi
+        
+    #do not bother
+    if [ -f "${HOME_DIR}/logs/${appleID}/paid_items.txt" ]; then
+        for LINE in $(cat "${HOME_DIR}/logs/${appleID}/paid_items.txt"); do
+            if grep -q "^$LINE$" "$INFILE"; then
+                sed -i '' "/^$LINE$/d" "$INFILE"
+                ((removed_items_count++))
+            fi
+        done
+    fi
+    
+    if [ "$removed_items_count" -eq 0 ]; then
+        center_message_input "The list of apps you already owned was empty, hence no apps will be skipped." '#' '#' "Press Any Key To Start: " " Clean List "
+    elif [ "$removed_items_count" -eq 1 ]; then
+        center_message_input "1 app you already own will be skipped." '#' '#' "Press Any Key To Start: " " Clean List "
+    else
+        center_message_input "${removed_items_count} apps you already own will be skipped." '#' '#' "Press Any Key To Start: " " Clean List "
+    fi
+}
 
 # Check if this is first launch
 if [ "$1" == "updated" ]; then
     updated
 fi
 
+#check if folder exists
+if [ ! -d ~/InsaneAppPurchaser ]; then
+    # Create the directory
+    mkdir -p ~/InsaneAppPurchaser
+    touch ~/InsaneAppPurchaser/enableLogging
+fi
+
+if [ ! -d ~/InsaneAppPurchaser/logs ]; then
+    # Create the directory
+    mkdir -p ~/InsaneAppPurchaser/logs
+fi
+        
 check_for_updates
 main_menu
