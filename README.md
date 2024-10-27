@@ -2,6 +2,12 @@
 
 A script to purchase apps in bulk.
 
+# DEVLOPMENT PAUSED
+
+Apple has altered the purchasing API in a way that means ipatool (a key component of this script) wont work. 
+
+Until ipatool is fixed this script will no longer work.
+
 ## Why on earth would this be useful?
 
 Apps are frequently removed from the appstore. Hence my thinking was, if I can purchase as many apps as possible, whenever an app is removed I can go download it later from my purchase list.
