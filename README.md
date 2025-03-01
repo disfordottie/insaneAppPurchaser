@@ -2,12 +2,6 @@
 
 A script to purchase apps in bulk.
 
-# DEVLOPMENT PAUSED
-
-Apple has altered the purchasing API in a way that means ipatool (a key component of this script) wont work. 
-
-Until ipatool is fixed this script will no longer work.
-
 ## Why on earth would this be useful?
 
 Apps are frequently removed from the appstore. Hence my thinking was, if I can purchase as many apps as possible, whenever an app is removed I can go download it later from my purchase list.
@@ -27,10 +21,11 @@ Apps are frequently removed from the appstore. Hence my thinking was, if I can p
 
 - [x] Automated ipatool installer
 - [x] Add settings menu
-- [ ] Add Logs/Lists
-- - [ ] Do not purchase again: Successful purchases, already owned,
-- - [ ] Blocked apps for paid apps to not attempt then again on any account.
-- - [ ] Try again: various 1 time errors
+- [x] Add Logs/Lists
+- - [x] Do not purchase again: Successful purchases, already owned,
+- - [x] Blocked apps for paid apps to not attempt then again on any account.
+- - [x] Try again: various 1 time errors
+- [x] Fix errors related to jq
 
 ## Usage
 
@@ -56,8 +51,9 @@ com.klgamesllc.escapechallenge
 2. Select the list you would like to use
 
 **Help! I'm getting an error loading the lists!**
-- First make sure you can access [this link.](https://api.github.com/repos/disfordottie/insaneAppPurchaser/contents/Lists?ref=main)
-- If you can't, try manually downloading the list you want from the github, then use option 1 on the main menu.
+- **This issue has (hopefully) been fixed in 1.4, make sure to update.**
+- ~~First make sure you can access [this link.](https://api.github.com/repos/disfordottie/insaneAppPurchaser/contents/Lists?ref=main)~~
+- ~~If you can't, try manually downloading the list you want from the github, then use option 1 on the main menu.~~
 
 ## Obtaining Bundle ID's
 **As of 1.1 you can now use the built in lists!** Some Examples include:
