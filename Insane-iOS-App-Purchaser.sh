@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version="1.3"
+version="1.4"
 
 red=`tput setaf 1`
 red_background='\033[7;91m'
