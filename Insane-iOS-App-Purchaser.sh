@@ -8,6 +8,7 @@ green=`tput setaf 2`
 green_background='\033[7;92m'
 lightgreen='\033[1;32m'
 cyan=`tput setaf 6`
+cyan_background='\033[7;36m'
 none=`tput sgr0`
 yellow='\033[1;33m'
 yellow_background='\033[7;93m'
@@ -45,8 +46,14 @@ center_message_input() {
     fi
     
     # Calculate the vertical position for the message, considering the number of message lines
+    
     local top_padding=$(( (rows - message_lines) / 2 ))
-    local bottom_padding=$(( rows - message_lines - top_padding - 2 ))
+        
+    if [[ "$variable" == "--no-input" ]]; then
+        local bottom_padding=$(( rows - message_lines - top_padding - 1 ))
+    else
+        local bottom_padding=$(( rows - message_lines - top_padding - 2 ))
+    fi
     
     # Clear the screen
     #clear
@@ -112,6 +119,8 @@ $message"
     if [[ "$variable" == "--bsod" ]] || [[ "$variable" == "--bsod-sad" ]]; then
         printf '%*s' "$cols" '' | tr ' ' "$bottom_border_char"
         printf "${none}${blue_background_white_text}\n"
+    elif [[ "$variable" == "--no-input" ]]; then
+        printf '%*s' "$cols" '' | tr ' ' "$bottom_border_char"
     else
         printf '%*s\n' "$cols" '' | tr ' ' "$bottom_border_char"
     fi
@@ -121,13 +130,15 @@ $message"
         read -p "$input_prompt" -r choice
     elif [[ "$variable" == "--sensitive" ]]; then
         read -p "$input_prompt" -r -s choice
-    else
+    elif [[ "$variable" != "--no-input" ]]; then
         read -p "$input_prompt" -r -n 1 choice
     fi
     
     printf "${none}"
     
-    export choice
+    if [[ "$variable" != "--no-input" ]]; then
+        export choice
+    fi
 }
 
 main_menu() {
@@ -180,62 +191,7 @@ ${lightred}${bold}\"$choice\" is not a valid option${none}" '#' '#' "Choice: " "
         return
     fi
     
-    local last_line=$(ipatool download -b com 2>&1 | tail -n 1)
-    while True; do
-        if [[ "$last_line" =~ "failed to get account" ]] || [[ "$last_line" =~ "failed to reoslve the country code" ]]; then
-        
-            ipatool auth revoke
-            
-            center_message_input "${yellow}${bold}ipatool is installed but hasn't been configured.${none}
-
-
-Press any key to configure it now.
-
-
-Or do it yourself with: (ipatool auth login -e <your appleid>)
-" '#' '#' "Press Any Key To Configure ipatool: " " Prerequisites "
-            
-            configure_ipatool
-            break
-    
-        elif [[ "$last_line" =~ "command not found" ]]; then
-        
-            center_message_input "${lightred}${bold}ipatool is required but couldn't be found.${none}
-
-
-${purple}Press any key to install it now.${none}
-
-
-Or Install it yourself at (https://github.com/majd/ipatool)
-" '#' '#' "Press Any Key To Install ipatool: " " Prerequisites "
-
-            if ! install_ipatool; then
-                center_message_input "${lightred}${bold}An error occurred during the installation of ipatool.${none}" '#' '#' "Press Any Key To Continue: " " Prerequisites "
-                
-            else
-                last_line=$(ipatool download -b com 2>&1 | tail -n 1)
-                if [[ "$last_line" =~ "failed to get account" ]]; then
-                    center_message_input "${lightgreen}${bold}ipatool was installed successfully.${none}
-                    
-${yellow}${bold}You must configure it before use.${none}" '#' '#' "Press Any Key To Configure ipatool: " " Prerequisites "
-
-                    configure_ipatool
-                    
-                    break
-                else
-                    center_message_input "${lightgreen}${bold}ipatool was installed successfully.${none}" '#' '#' "Press Any Key To Continue: " " Prerequisites "
-                    
-                    break
-                fi
-            fi
-            
-        else
-        
-            break
-        
-        fi
-    done
-
+    check_ipatool
 
     if [ "$list_option" == "1" ]; then
         manual
@@ -318,89 +274,6 @@ ${yellow_background}                                                       ${non
     done
 }
 
-install_ipatool() {
-    # Define variables
-    RELEASE_API_URL="https://api.github.com/repos/majd/ipatool/releases/latest"
-    INSTALL_DIR="/usr/local/bin"
-
-    # Fetch the latest release tag
-    LATEST_RELEASE_INFO=$(curl -s "$RELEASE_API_URL")
-    LATEST_VERSION=$(echo "$LATEST_RELEASE_INFO" | jq -r '.tag_name' | sed 's/^v//')
-
-    # Detect architecture
-    ARCH=$(uname -m)
-    if [[ "$ARCH" == "arm64" ]]; then
-        ARCHIVE_NAME="ipatool-${LATEST_VERSION}-macos-arm64.tar.gz"
-    else
-        ARCHIVE_NAME="ipatool-${LATEST_VERSION}-macos-amd64.tar.gz"
-    fi
-
-    mkdir -p "${HOME_DIR}/temp"
-
-    # Download the appropriate release archive
-    DOWNLOAD_URL="https://github.com/majd/ipatool/releases/download/v$LATEST_VERSION/$ARCHIVE_NAME"
-    curl -L -o "${HOME_DIR}/temp/$ARCHIVE_NAME" "$DOWNLOAD_URL"
-            
-    # Extract the archive
-    tar -xvzf "${HOME_DIR}/temp/$ARCHIVE_NAME" -C "${HOME_DIR}/temp/" || { echo -e "${lightred}${bold}Error: Failed to extract ${ARCHIVE_NAME}${none}"; rm -rf "${HOME_DIR}/temp/"; return 1; }
-
-    if [[ -f "${HOME_DIR}/temp/bin/ipatool-${LATEST_VERSION}-macos-${ARCH}" ]]; then
-        mv "${HOME_DIR}/temp/bin/ipatool-${LATEST_VERSION}-macos-${ARCH}" "$INSTALL_DIR/ipatool"
-    else
-        echo -e "${lightred}${bold}Error: Extracted binary not found.${none}"
-        rm -rf "${HOME_DIR}/temp/"
-        return 1
-    fi
-
-    # Clean up
-    rm -rf "${HOME_DIR}/temp/"
-            
-    echo -e "${purple}${bold}###################################${none}"
-    echo -e "${purple}${bold}# If prompted enter your password #${none}"
-    echo -e "${purple}${bold}###################################${none}"
-    chmod -R +x "$INSTALL_DIR/ipatool"
-    
-    local last_line=$(ipatool auth info 2>&1 | tail -n 1)
-    if [[ "$last_line" =~ "command not found" ]]; then
-        echo -e "${lightred}${bold}Error: command not found: ipatool${none}"
-        rm -rf "${HOME_DIR}/temp/bin"
-        return 1
-    fi
-}
-
-configure_ipatool() {
-    while True; do
-        center_message_input "For ipatool to function it has to authenticate with the Appstore.
-        
-${purple}${bold}Enter your Apple ID email.${none}" '#' '#' "Apple ID Email: " " Prerequisites " --long
-        local email="$choice"
-    
-        center_message_input "${purple}${bold}Enter your Apple ID password.${none}
-        
-        
-${yellow_background}                                                           ${yellow_background}
-${yellow_background}${bold}   Important!                                              ${yellow_background}
-   If you get a message asking for keychain access,        ${yellow_background}
-   choose \"Always Allow\". This is neccasary to remember    ${yellow_background}
-   your login and prevent having to re-login every time.   ${yellow_background}
-                                                           ${none}" '#' '#' "Apple ID Password: " " Prerequisites " --sensitive
-        local password="$choice"
-        
-        ipatool auth login -e ${email} -p ${password}
-        
-        local last_line=$(ipatool download -b com 2>&1 | tail -n 1)
-        if [[ "$last_line" =~ "failed to get account" ]] || [[ "$last_line" =~ "failed to reoslve the country code" ]]; then
-            ipatool auth revoke
-            center_message_input "${lightred}${bold}Your Apple ID email/password was incorrect.
-        
-Or a 2FA code was not provided when prompted.${none}" '#' '#' "Press Any Key To Retry: " " Prerequisites "
-        else
-        center_message_input "${lightgreen}${bold}ipatool was configured successfully.${none}" '#' '#' "Press Any Key To Continue: " " Prerequisites "
-            return
-        fi
-    done
-}
-
 manual() {
 
     center_message_input "Before starting make sure you have a list of Bundle ID's
@@ -478,6 +351,7 @@ EOF
         ((index++))
         ((file_count++))
     done < <(echo "$response" | jq -r '.[] | select(.type == "file") | .name' | sed 's/\.txt$//')
+    #no jq done < <(echo "$response" | grep -o '"name": "[^"]*"' | sed 's/"name": "//' | sed 's/\.txt$//')
     
     choice=-1
     if [ "$file_count" -eq 0 ]; then
@@ -502,7 +376,9 @@ ${lightred}${bold}Choose a number from 1 to $file_count${none}" '#' '#' "List to
     
     
     # Get the download URL of the selected file
+    # no jq local url=$(echo "$response" | grep -o '"download_url": "[^"]*"' | sed -n "${choice}s/.*: \"\(.*\)\"/\1/p")
     local url=$(echo "$response" | jq -r ".[$((choice-1))] | select(.type == \"file\") | .download_url")
+
     local url=$(echo "$url" | sed 's/ /%20/g; s/&/%26/g; s/+/%2B/g')
     echo "$url"
     
@@ -557,7 +433,7 @@ ${bold}The list \"$file_name\" contains $line_count apps.${none}" '#' '#' "Press
         
         local message="${yellow}${bold}Skip apps you already own?${none}
     
-${bold}Because you have logging enabled you ca skip apps you already own.${none}"
+${bold}Because you have logging enabled you can skip apps you already own.${none}"
 
         center_message_input "${message}" '#' '#' "Skip Owned Apps? [y/n]: " " Existing List "
         
@@ -833,7 +709,7 @@ ${lightred}${bold}\"$choice\" is not a valid option${none}" '#' '#' "Type \"CONT
             
                 ipatool auth revoke
             
-                configure_ipatool
+                check_ipatool
                 
                 last_line=$(ipatool auth info --format json 2>&1 | tail -n 1)
                 appleID=$(echo "$last_line" | jq -r '.email')
@@ -1382,6 +1258,430 @@ clean_list() {
     fi
 }
 
+install_ipatool() {
+    # Define variables
+    RELEASE_API_URL="https://api.github.com/repos/majd/ipatool/releases/latest"
+    INSTALL_DIR="/usr/local/bin"
+    
+    if [[ "$1" == "homebrew" ]]; then
+        
+        brew upgrade ipatool
+        return 0
+        
+    fi
+
+    # Fetch the latest release tag
+    LATEST_RELEASE_INFO=$(curl -s "$RELEASE_API_URL")
+    LATEST_VERSION=$(echo "$LATEST_RELEASE_INFO" | jq -r '.tag_name' | sed 's/^v//')
+    
+    # no jq LATEST_VERSION=$(echo "$LATEST_RELEASE_INFO" | grep -o '"tag_name": *"[^"]*' | sed -E 's/"tag_name": *"v?//')
+
+
+    # Detect architecture
+    ARCH=$(uname -m)
+    if [[ "$ARCH" == "arm64" ]]; then
+        ARCHIVE_NAME="ipatool-${LATEST_VERSION}-macos-arm64.tar.gz"
+        BINARY_NAME="ipatool-${LATEST_VERSION}-macos-arm64"
+    else
+        ARCHIVE_NAME="ipatool-${LATEST_VERSION}-macos-amd64.tar.gz"
+        BINARY_NAME="ipatool-${LATEST_VERSION}-macos-amd64"
+    fi
+
+    mkdir -p "${HOME_DIR}/temp"
+
+    # Download the appropriate release archive
+    DOWNLOAD_URL="https://github.com/majd/ipatool/releases/download/v$LATEST_VERSION/$ARCHIVE_NAME"
+    curl -L -o "${HOME_DIR}/temp/$ARCHIVE_NAME" "$DOWNLOAD_URL"
+            
+    # Extract the archive
+    tar -xvzf "${HOME_DIR}/temp/$ARCHIVE_NAME" -C "${HOME_DIR}/temp/" || { echo -e "${lightred}${bold}Error: Failed to extract ${ARCHIVE_NAME}${none}"; rm -rf "${HOME_DIR}/temp/"; return 1; }
+
+    if [[ -f "${HOME_DIR}/temp/bin/${BINARY_NAME}" ]]; then
+        mv "${HOME_DIR}/temp/bin/${BINARY_NAME}" "$INSTALL_DIR/ipatool"
+    else
+        echo -e "${lightred}${bold}Error: Extracted binary not found.${none}"
+        rm -rf "${HOME_DIR}/temp/"
+        return 1
+    fi
+
+    # Clean up
+    rm -rf "${HOME_DIR}/temp/"
+            
+    local message=""
+        
+    local lines=(
+        "${yellow_background}${bold}                                                  ${yellow_background}${none}"
+        "${yellow_background}${bold}     If prompted please enter your password!      ${yellow_background}${none}"
+        "${yellow_background}${bold}                                                  ${yellow_background}${none}"
+        "${yellow_background}${bold}    This is necessary to finish installation.     ${yellow_background}${none}"
+        "${yellow_background}${bold}                                                  ${yellow_background}${none}"
+    )
+    
+    local cols=$(tput cols)
+    
+    # Loop through each line and process it
+    for line in "${lines[@]}"; do
+    
+        local title_length=50
+        local left_padding=$(( (cols - title_length) / 2 ))
+
+        local padding=$(printf "%*s" "$left_padding" | tr ' ' " ")
+        
+        local padded_line="${padding}${line}"
+        
+        message=$(cat <<EOF
+$message
+${padded_line}
+EOF
+)
+    done
+
+    center_message_input "$message" '#' '#' " " " Prerequisites " --no-input
+    
+    chmod -R +x "$INSTALL_DIR/ipatool"
+    
+    local last_line=$(ipatool auth info 2>&1 | tail -n 1)
+    if [[ "$last_line" =~ "command not found" ]]; then
+        echo -e "${lightred}${bold}Error: command not found: ipatool${none}"
+        rm -rf "${HOME_DIR}/temp/bin"
+        return 1
+    fi
+    return 0
+}
+
+install_jq() {
+    INSTALL_DIR="/usr/local/bin"
+    
+    # Detect architecture
+    ARCH=$(uname -m)
+    if [[ "$ARCH" == "arm64" ]]; then
+        BINARY_NAME="jq-macos-arm64"
+    else
+        BINARY_NAME="jq-macos-amd64"
+    fi
+
+    latest_url=$(curl -sL "https://api.github.com/repos/jqlang/jq/releases/latest" | grep -oE '"browser_download_url": ?"[^"]*'"${BINARY_NAME}"'"' | cut -d '"' -f 4)
+    
+    curl -L -o "$INSTALL_DIR/jq" "$latest_url"
+    
+    if [[ ! -f "${INSTALL_DIR}/jq" ]]; then
+        echo -e "${lightred}${bold}Error: Extracted binary not found.${none}"
+        rm -rf "${HOME_DIR}/temp/"
+        return 1
+    fi
+
+    # Clean up
+    rm -rf "${HOME_DIR}/temp/"
+            
+    local message=""
+        
+    local lines=(
+        "${yellow_background}${bold}                                                  ${yellow_background}${none}"
+        "${yellow_background}${bold}     If prompted please enter your password!      ${yellow_background}${none}"
+        "${yellow_background}${bold}                                                  ${yellow_background}${none}"
+        "${yellow_background}${bold}    This is necessary to finish installation.     ${yellow_background}${none}"
+        "${yellow_background}${bold}                                                  ${yellow_background}${none}"
+    )
+    
+    local cols=$(tput cols)
+    
+    # Loop through each line and process it
+    for line in "${lines[@]}"; do
+    
+        local title_length=50
+        local left_padding=$(( (cols - title_length) / 2 ))
+
+        local padding=$(printf "%*s" "$left_padding" | tr ' ' " ")
+        
+        local padded_line="${padding}${line}"
+        
+        message=$(cat <<EOF
+$message
+${padded_line}
+EOF
+)
+    done
+
+    center_message_input "$message" '#' '#' " " " Prerequisites " --no-input
+    
+    chmod -R +x "$INSTALL_DIR/jq"
+    
+    local last_line=$(jq --version 2>&1)
+    if [[ "$last_line" =~ "command not found" ]]; then
+        echo -e "${lightred}${bold}Error: command not found: ipatool${none}"
+        rm -rf "${HOME_DIR}/temp/bin"
+        return 1
+    fi
+    
+    return 0
+}
+
+check_for_dependencies() {
+    local error_message=()
+    while True; do
+        local message=""
+        local Need_to_install_ipatool="true"
+        local Need_to_install_ipatool="true"
+        local jq_colour=""
+        local ipatool_colour=""
+        local jq_spaces_left=""
+        local jq_spaces_right=""
+        local ipatool_spaces_left=""
+        local ipatool_spaces_right=""
+        local lines=()
+        local hoembrew_ipatool="false"
+        
+        local last_line=$(jq --version 2>&1)
+
+        if [[ "$last_line" =~ "command not found" ]]; then
+        
+            local jq_message="  jq - Needs to be installed  "
+            
+            Need_to_install_jq="true"
+            
+        else
+        
+            local jq_message="  jq - Installed  "
+            
+            Need_to_install_jq="false"
+            
+        fi
+        
+        local last_line=$(ipatool -v 2>&1 | tail -n 1)
+        if [[ "$last_line" =~ "command not found" ]]; then
+        
+            local ipatool_message="  ipatool - Needs to be installed  "
+            
+            Need_to_install_ipatool="true"
+            
+        else
+            local latest_ipatool=$(curl -s https://api.github.com/repos/majd/ipatool/releases/latest | grep '"tag_name":' | sed -E 's/.*"tag_name": ?"v?([^"]+).*/\1/')
+            if [[ -n "$latest_ipatool" ]]; then
+                if [[ "$last_line" =~ "$latest_ipatool" ]]; then
+
+                    local ipatool_message="  ipatool - Installed  "
+                
+                    Need_to_install_ipatool="false"
+                    
+                else
+                    local ipatool_message="  ipatool - Needs to be updated  "
+                    
+                    Need_to_install_ipatool="true"
+                    if [[ -L "$INSTALL_DIR/ipatool" ]]; then
+                       homebrew_ipatool="true"
+                    fi
+                fi
+            else
+            
+                local ipatool_message="  ipatool - Installed  "
+                
+                Need_to_install_ipatool="false"
+            fi
+        fi
+        
+        #exit if both are installed
+        if [ "$Need_to_install_jq" = "false" ] && [ "$Need_to_install_ipatool" = "false" ]; then
+            break
+        fi
+        
+        # jq
+        while [ $(( ${#jq_message} + ${#jq_spaces_left} + ${#jq_spaces_right} )) -lt 54 ]; do
+            # Append a character to the string (for demonstration)
+            jq_spaces_left="${jq_spaces_left} "
+            jq_spaces_right="${jq_spaces_right} "
+        done
+        
+        while [ $(( ${#jq_message} + ${#jq_spaces_left} + ${#jq_spaces_right} )) -lt 55 ]; do
+            # Append a character to the string (for demonstration)
+            jq_spaces_right="${jq_spaces_right} "
+        done
+        
+        if [ "$Need_to_install_jq" = "true" ]; then
+            jq_colour="$red_background${bold}"
+        else
+            jq_colour="$green_background${bold}"
+        fi
+        
+        #ipatool
+        while [ $(( ${#ipatool_message} + ${#ipatool_spaces_left} + ${#ipatool_spaces_right} )) -lt 54 ]; do
+            # Append a character to the string (for demonstration)
+            ipatool_spaces_left="${ipatool_spaces_left} "
+            ipatool_spaces_right="${ipatool_spaces_right} "
+        done
+        
+        while [ $(( ${#ipatool_message} + ${#ipatool_spaces_left} + ${#ipatool_spaces_right} )) -lt 55 ]; do
+            # Append a character to the string (for demonstration)
+            ipatool_spaces_right="${ipatool_spaces_right} "
+        done
+        
+        if [ "$Need_to_install_ipatool" = "true" ]; then
+            ipatool_colour="$red_background${bold}"
+        else
+            ipatool_colour="$green_background${bold}"
+        fi
+        
+        local lines=(
+"${cyan_background}${bold}                                                       ${none}"
+"${cyan_background}${bold}  The following commands are required for this script  ${none}"
+"${cyan_background}${bold}    to function, but not all of them are installed.    ${none}"
+"${cyan_background}${bold}                                                       ${none}"
+"${cyan_background}${bold}${jq_spaces_left}${jq_colour}${jq_message}${cyan_background}${bold}${jq_spaces_right}${none}"
+"${cyan_background}${bold}                                                       ${none}"
+"${cyan_background}${bold}${ipatool_spaces_left}${ipatool_colour}${ipatool_message}${cyan_background}${bold}${ipatool_spaces_right}${none}"
+"${cyan_background}${bold}                                                       ${none}"
+"${cyan_background}${bold}  Press any key to install the missing dependencies.   ${none}"
+"${cyan_background}${bold}                                                       ${none}"
+)
+
+        lines+=("${error_message[@]}")
+    
+        local cols=$(tput cols)
+    
+        # Loop through each line and process it
+        for line in "${lines[@]}"; do
+    
+            local title_length=55
+            local left_padding=$(( (cols - title_length) / 2 ))
+
+            local padding=$(printf "%*s" "$left_padding" | tr ' ' " ")
+        
+            local padded_line="${padding}${line}"
+        
+        message=$(cat <<EOF
+$message
+${padded_line}
+EOF
+)
+        done
+    
+        center_message_input "$message" '#' '#' "Press any key begin installation: " " Prerequisites "
+        
+        if "$Need_to_install_jq" = "true"; then
+            install_jq
+            if [ $? -eq 0 ]; then
+                #worked
+                error_message=()
+            else
+                error_message=(
+""
+"${red_background}${bold}                                                       ${none}"
+"${red_background}${bold}                 jq failed to install                  ${none}"
+"${red_background}${bold}                                                       ${none}"
+)
+                continue #restart while
+            fi
+        fi
+        
+        if "$Need_to_install_ipatool" = "true"; then
+            if "$homebrew_ipatool" = "true"; then
+                install_ipatool "homebrew"
+            else
+                install_ipatool
+            fi
+            
+            if [ $? -eq 0 ]; then
+                error_message=()
+            else
+                error_message=(
+""
+"${red_background}${bold}                                                       ${none}"
+"${red_background}${bold}              ipatool failed to install                ${none}"
+"${red_background}${bold}                                                       ${none}"
+)
+                continue
+            fi
+        fi
+        
+        ######dsiplay success
+        
+        message=""
+        
+        lines=(
+"${green_background}${bold}                                                  ${green_background}${none}"
+"${green_background}${bold}                      Success                     ${green_background}${none}"
+"${green_background}${bold}                                                  ${green_background}${none}"
+"${green_background}${bold}   All required dependencies are now installed.   ${padded_message}${green_background}${none}"
+"${green_background}${bold}                                                  ${green_background}${none}"
+    )
+    
+        local cols=$(tput cols)
+    
+        # Loop through each line and process it
+        for line in "${lines[@]}"; do
+    
+            local title_length=50
+            local left_padding=$(( (cols - title_length) / 2 ))
+
+            local padding=$(printf "%*s" "$left_padding" | tr ' ' " ")
+        
+            local padded_line="${padding}${line}"
+        
+            message=$(cat <<EOF
+$message
+${padded_line}
+EOF
+)
+        done
+    
+        center_message_input "$message" '#' '#' "Press Any Key To Continue: " " Prerequisites "
+        break
+    done
+    
+    check_ipatool
+}
+
+check_ipatool() {
+    local last_line=$(ipatool download -b com 2>&1 | tail -n 1)
+    while True; do
+        if [[ "$last_line" =~ "failed to get account" ]] || [[ "$last_line" =~ "failed to reoslve the country code" ]]; then
+        
+            ipatool auth revoke
+            
+            center_message_input "${yellow}${bold}ipatool is installed but hasn't been configured.${none}
+
+
+Press any key to configure it now.
+
+
+Or do it yourself with: (ipatool auth login -e <your appleid>)
+" '#' '#' "Press Any Key To Configure ipatool: " " Prerequisites "
+            
+            while True; do
+                center_message_input "For ipatool to function it has to authenticate with the Appstore.
+        
+${purple}${bold}Enter your Apple ID email.${none}" '#' '#' "Apple ID Email: " " Prerequisites " --long
+                local email="$choice"
+    
+                center_message_input "${purple}${bold}Enter your Apple ID password.${none}
+        
+        
+${yellow_background}                                                           ${yellow_background}
+${yellow_background}${bold}   Important!                                              ${yellow_background}
+   If you get a message asking for keychain access,        ${yellow_background}
+   choose \"Always Allow\". This is neccasary to securely    ${yellow_background}
+   store your login in your mac keychain for later use.    ${yellow_background}
+                                                           ${none}" '#' '#' "Apple ID Password: " " Prerequisites " --sensitive
+                local password="$choice"
+        
+                ipatool auth login -e ${email} -p ${password}
+        
+                local last_line=$(ipatool download -b com 2>&1 | tail -n 1)
+                if [[ "$last_line" =~ "failed to get account" ]] || [[ "$last_line" =~ "failed to reoslve the country code" ]]; then
+                    ipatool auth revoke
+                    center_message_input "${lightred}${bold}Your Apple ID email/password was incorrect.
+
+Alternatively you either did not allow keychain access
+or enter a 2FA code was not provided when prompted.${none}" '#' '#' "Press Any Key To Retry: " " Prerequisites "
+                else
+                    center_message_input "${lightgreen}${bold}ipatool was configured successfully.${none}" '#' '#' "Press Any Key To Continue: " " Prerequisites "
+                    return
+                fi
+            done
+        fi
+        return
+    done
+}
+
 # Check if this is first launch
 if [ "$1" == "updated" ]; then
     updated
@@ -1398,6 +1698,7 @@ if [ ! -d ~/InsaneAppPurchaser/logs ]; then
     # Create the directory
     mkdir -p ~/InsaneAppPurchaser/logs
 fi
-        
+
+check_for_dependencies
 check_for_updates
 main_menu

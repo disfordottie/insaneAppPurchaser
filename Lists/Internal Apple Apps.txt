@@ -12,5 +12,8 @@ com.apple.siri-voice-study
 com.bydeluxe.com.appleplus.fyc
 com.filemaker.go.v21
 com.apple.ConnectSSO
+com.apple.dast
 com.apple.hfrecorder
 com.apple.mipactuserstudy
+com.apple.DockkitCertificationAs
+com.apple.visionproassemble

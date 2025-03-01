@@ -10,6 +10,7 @@ com.apple.music.classical
 com.apple.artistconnect
 com.apple.news
 com.apple.applemediaroom
+com.apple.boardwalk
 com.apple.Research
 com.apple.sports
 com.apple.store.Jolly
@@ -31,6 +32,7 @@ com.apple.Symptom-Assessment.ios
 com.apple.MobileAddressBook
 com.jackadam.darksky
 com.apple.facetime
+com.apple.encounterdinosaurs
 com.apple.DocumentsApp
 com.apple.FinalCutApp.companion
 com.apple.FinalCutApp
@@ -87,10 +89,17 @@ com.apple.weather
 com.apple.messages.classicMac
 com.apple.messages.hands
 com.apple.messages.hearts
+com.apple.rsvp
+com.apple.GenerativePlaygroundApp
 is.workflow.my.app
+com.apple.InstallAssistant.macOSSequoia
+com.apple.InstallAssistant.Seed.macOS15Seed
 com.apple.InstallAssistant.macOSSonoma
+com.apple.InstallAssistant.Seed.macOS14Seed
 com.apple.InstallAssistant.macOSVentura
+com.apple.InstallAssistant.Seed.macOS13Seed1
 com.apple.InstallAssistant.macOSMonterey
+com.apple.InstallAssistant.Seed.macOS12Seed1
 com.apple.InstallAssistant.macOSBigSur
 com.apple.InstallAssistant.Catalina
 com.apple.InstallAssistant.Mojave
