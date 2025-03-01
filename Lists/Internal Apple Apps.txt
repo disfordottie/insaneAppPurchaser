@@ -17,3 +17,4 @@ com.apple.hfrecorder
 com.apple.mipactuserstudy
 com.apple.DockkitCertificationAs
 com.apple.visionproassemble
+com.apple.DockkitCertificationAssistant
