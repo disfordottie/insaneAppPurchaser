@@ -147,7 +147,7 @@ main_menu() {
     local message="${bold}Insane iOS App Purchaser, $version by ${cyan}@disfordottie${none}
 
 
-This script purchases apps in bulk using a list of Bundle ID's.
+This script purchases apps in bulk using a list of Bundle IDs.
 
 1. Use my own list
 
@@ -253,7 +253,7 @@ ${lightred}${bold}\"$choice\" is not a valid option${none}" '#' '#' "Choice: " "
             signOutMessage="
             
 ${yellow_background}                                                       ${none}
-${yellow_background}   ipatool has been been sined out                     ${none}
+${yellow_background}   ipatool has been been signed out                    ${none}
 ${yellow_background}                                                       ${none}"
         elif [ "$choice" == "3" ]; then
             local last_line=$(ipatool auth info --format json 2>&1 | tail -n 1)
