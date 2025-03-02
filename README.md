@@ -29,6 +29,10 @@ Apps are frequently removed from the appstore. Hence my thinking was, if I can p
 
 ## Usage
 
+### Unfortunatley for now this script is Mac only! Support for linux is being worked on. 
+
+This is because when I started coding it I used a Mac, then half way through realised alot of the code would only work on macOS 😐
+
 ### Help! I just want it to open!
 1. Type ``` chmod -R +x ``` then drag the downloaded script file onto your terminal window and press enter.
 - Example: ``` chmod -R +x ~/Desktop/Insane-iOS-App-Purchaser.sh ```
